@@ -1,6 +1,7 @@
 const { jsPDF } = window.jspdf;
 const form=document.getElementById("recruitForm");
 const dialogue=document.getElementById("dialogue");
+const speakerName=document.getElementById("speakerName");
 const cursor=document.getElementById("cursor");
 const progressBar=document.getElementById("progressBar");
 const progressLabel=document.getElementById("progressLabel");
@@ -39,32 +40,48 @@ const base={
 
 // Añadir una pregunta nueva sólo requiere incorporar otro objeto a esta lista.
 const questions=[
-  {title:"¿Qué ocurre realmente en la montaña?",tag:"LA PRUEBA",response:"Los generales la llaman una prueba. Los soldados que vuelven la llaman una puerta. Nadie se pone de acuerdo sobre qué hay al otro lado."},
-  {title:"¿Por qué nos envían allí durante la guerra?",tag:"ÓRDENES",response:"Porque nuestras fronteras están cayendo y los generales creen que la montaña puede darnos una ventaja. O eso dicen en los informes que nos permiten leer."},
-  {title:"¿Qué habilidades han obtenido los supervivientes?",tag:"INFORMES",response:"Unos han doblado la gravedad a su alrededor. Otros han despertado fuego en las venas. También hay quienes regresaron sin poderes, pero con una sombra que no los abandona."},
-  {title:"¿Se puede rechazar la prueba?",tag:"ADVERTENCIA",response:"Puedes rechazarla. Nadie puede obligarte a subir. Pero la guerra seguirá esperando abajo, y los generales no suelen olvidar quién decidió quedarse atrás."},
-  {title:"¿Qué encontraremos en la cumbre?",tag:"ARCHIVO SELLADO",response:"Si lo supiera, no estaría sentado aquí leyendo formularios. La única orden es alcanzar la cumbre, sobrevivir y no aceptar ningún trato que la montaña te ofrezca."}
+  {id:"officer-name",title:"¿Cuál es su nombre, oficial?",tag:"IDENTIDAD",response:"Oficial Darien Von Voss. Llevo suficiente tiempo en este puesto como para reconocer a un voluntario asustado antes de que se siente."},
+  {id:"officer-service",unlockAfter:"officer-name",title:"¿Cuánto tiempo lleva reclutando?",tag:"TRAYECTORIA",response:"Once años. Empecé reclutando para la frontera y terminé enviando gente hacia la montaña. No es una promoción de la que me sienta orgulloso."},
+  {id:"war-cause",title:"¿Por qué empezó la guerra?",tag:"ORIGEN DEL CONFLICTO",response:"Empezó con una disputa por los pasos del norte y terminó convirtiéndose en una guerra por el control de los recursos de la montaña. Eso dicen los comunicados. La verdad suele enterrarse antes que los soldados."},
+  {id:"war-duration",unlockAfter:"war-cause",title:"¿Cuánto tiempo lleva la guerra?",tag:"DURACIÓN DEL CONFLICTO",response:"Va por su sexto año. Al principio hablábamos de semanas; después, de meses. Ahora los mandos cuentan las estaciones y los soldados contamos los nombres que faltan."},
+  {id:"war-enemy",unlockAfter:"war-duration",title:"¿Contra quién es la guerra?",tag:"FUERZAS ENEMIGAS",response:"Contra la coalición de los reinos del norte. Pero no luchamos sólo contra sus ejércitos; también contra sus generales, que buscan el mismo poder que los nuestros encontraron en la montaña."},
+  {id:"war-objective",unlockAfter:"war-enemy",title:"¿Cuál es nuestro objetivo en esta guerra?",tag:"OBJETIVO MILITAR",response:"Mantener los pasos, proteger nuestro hogar y evitar que el enemigo llegue a la montaña. En los informes oficiales, eso es todo. En los informes que no llevan sello, la montaña es el verdadero objetivo."},
+  {id:"officer-belief",unlockAfter:"war-objective",title:"¿Usted cree que esta guerra es justa?",tag:"OPINIÓN DEL OFICIAL",response:"Creo que hay gente intentando sobrevivir a ambos lados de la frontera. Después de once años, dejé de confundir las órdenes de los generales con la justicia."},
+  {id:"mountain",unlockAfter:"officer-belief",title:"¿Qué ocurre realmente en la montaña?",tag:"LA PRUEBA",response:"Los generales la llaman una prueba. Los soldados que vuelven la llaman una puerta. Nadie se pone de acuerdo sobre qué hay al otro lado."},
+  {id:"war",unlockAfter:"mountain",title:"¿Por qué nos envían allí durante la guerra?",tag:"ÓRDENES",response:"Porque nuestras fronteras están cayendo y los generales creen que la montaña puede darnos una ventaja. O eso dicen en los informes que nos permiten leer."},
+  {id:"supplies",unlockAfter:"war",title:"¿Cuántos días de provisiones tendremos? ¿Recibiremos más durante la misión?",tag:"SUMINISTROS",response:"Partiréis con provisiones para doce días. No hay garantía de recibir más: los convoyes no pueden cruzar todos los pasos y la montaña altera las rutas. Racionad desde el primer amanecer; nadie sabe cuánto durará el regreso."},
+  {id:"platoons",unlockAfter:"supplies",title:"¿Cuántos pelotones han enviado ya?",tag:"REGISTRO DE MARCHA",response:"Más de los que aparecen en los informes públicos. Cada pelotón que parte deja de figurar como unidad en cuanto cruza el paso de la montaña. Los altos mandos prefieren llamarlo rotación de personal."},
+  {id:"powers",unlockAfter:"platoons",title:"¿Qué habilidades han obtenido los generales?",tag:"HIPÓTESIS DEL RITUAL",response:"Los altos mandos creen que sus habilidades no son un accidente. Suponen que proceden del ritual realizado en la montaña: fuego, gravedad y otras anomalías serían el precio o la recompensa de haberlo completado."},
+  {id:"refusal",unlockAfter:"powers",title:"¿Se puede rechazar la prueba?",tag:"ADVERTENCIA",response:"Puedes rechazarla. Nadie puede obligarte a subir. Pero la guerra seguirá esperando abajo, y los generales no suelen olvidar quién decidió quedarse atrás."},
+  {id:"war-future",unlockAfter:"refusal",title:"¿Cómo ve el futuro de la guerra? ¿Cree que vamos a ganar?",tag:"PRONÓSTICO",response:"Si seguimos luchando como hasta ahora, no ganaremos; sólo aprenderemos a perder más despacio. Aun así, creo que todavía podemos vencer si encontramos la forma de detener a los generales antes de que conviertan la montaña en un arma."},
+  {id:"summit",unlockAfter:"war-future",title:"¿Qué encontraremos en la cumbre?",tag:"ARCHIVO SELLADO",response:"Si lo supiera, no estaría sentado aquí leyendo formularios. La única orden es alcanzar la cumbre, sobrevivir y no aceptar ningún trato que la montaña te ofrezca."}
 ];
 
 function updateQuestionCount(){
-  const asked=questions.filter(question=>question.asked).length;
-  questionCount.textContent=`${asked}/${questions.length}`;
+  const visible=questions.filter(isQuestionVisible);
+  const asked=visible.filter(question=>question.asked).length;
+  questionCount.textContent=`${asked}/${visible.length}`;
+}
+
+function isQuestionVisible(question){
+  return !question.unlockAfter||questions.some(candidate=>candidate.id===question.unlockAfter&&candidate.asked);
 }
 
 function renderQuestions(){
   questionList.innerHTML="";
-  questions.forEach((question,index)=>{
+  const visibleQuestions=questions.filter(isQuestionVisible);
+  visibleQuestions.forEach((question,index)=>{
     const button=document.createElement("button");
     button.type="button";
-    button.className="question-card";
-    button.dataset.questionIndex=index;
-    button.innerHTML=`<span class="question-number">0${index+1}</span><span class="question-copy"><strong>${question.title}</strong><small>${question.tag}</small></span><span class="question-state">PREGUNTAR</span>`;
+    button.className=`question-card${question.asked?" asked":""}`;
+    button.dataset.questionIndex=questions.indexOf(question);
+    button.innerHTML=`<span class="question-number">${String(index+1).padStart(2,"0")}</span><span class="question-copy"><strong>${question.title}</strong><small>${question.tag}</small></span><span class="question-state">${question.asked?"RESPONDIDA":"PREGUNTAR"}</span>`;
     button.addEventListener("click",()=>{
       question.asked=true;
-      button.classList.add("asked");
-      button.querySelector(".question-state").textContent="RESPONDIDA";
+      if(question.id==="officer-name")speakerName.textContent="OFICIAL DARÍEN VON VOSS";
       updateQuestionCount();
       sayQuestion(question.response);
+      renderQuestions();
     });
     questionList.append(button);
   });
