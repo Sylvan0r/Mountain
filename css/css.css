@@ -333,9 +333,11 @@ body::before {
 
 /* Form panel and custom scroll */
 .form-area {
+  position: relative;
   min-height: 0;
   overflow-y: auto;
-  padding: 43px clamp(25px, 5vw, 65px);
+  overflow-x: hidden;
+  padding: 0;
   background: linear-gradient(135deg, #e5dfcc, #d2c8ac);
   border: 1px solid #b5aa8f;
   border-top: 0;
@@ -359,6 +361,28 @@ body::before {
 
 .form-area::-webkit-scrollbar-thumb:hover {
   background: var(--gold);
+}
+
+.form-stage {
+  display: flex;
+  width: 100%;
+  min-height: 100%;
+  transition: transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.form-view,
+.questions-view {
+  flex: 0 0 100%;
+  width: 100%;
+  padding: 43px clamp(25px, 5vw, 65px);
+}
+
+.questions-view {
+  min-height: 100%;
+}
+
+.form-stage.questions-open {
+  transform: translateX(-100%);
 }
 
 .form-title {
@@ -392,6 +416,181 @@ body::before {
   color: var(--muted);
   font-size: 10px;
   line-height: 1.6;
+}
+
+.questions-trigger {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 13px;
+  margin: 20px 0 8px;
+  padding: 13px 15px;
+  color: var(--ink);
+  text-align: left;
+  background: #c7b99355;
+  border: 1px solid #a99e83;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.questions-trigger:hover {
+  background: #b9a97d88;
+  border-color: var(--gold);
+}
+
+.questions-trigger > span:first-child {
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  color: #eee3ce;
+  font: 700 17px "Libre Baskerville", serif;
+  background: var(--red);
+}
+
+.questions-trigger strong,
+.questions-trigger small {
+  display: block;
+}
+
+.questions-trigger strong {
+  color: var(--red);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+
+.questions-trigger small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.questions-trigger > b {
+  margin-left: auto;
+  color: var(--red);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+}
+
+.questions-heading {
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: end;
+  gap: 15px;
+  padding-bottom: 25px;
+  border-bottom: 1px solid #aaa087;
+}
+
+.questions-heading h2 {
+  margin: 0;
+  font: 700 clamp(25px, 3.5vw, 38px) / 1.2 "Libre Baskerville", serif;
+}
+
+.questions-heading p {
+  max-width: 620px;
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.back-button {
+  width: 42px;
+  height: 42px;
+  color: var(--red);
+  font: 24px "IBM Plex Mono", monospace;
+  background: transparent;
+  border: 1px solid #a99e83;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.back-button:hover {
+  color: #eee3ce;
+  background: var(--red);
+}
+
+.question-count {
+  min-width: 48px;
+  padding-bottom: 5px;
+  color: var(--red);
+  font: 700 18px "Libre Baskerville", serif;
+  text-align: right;
+}
+
+.question-list {
+  display: grid;
+  gap: 12px;
+  padding-top: 24px;
+}
+
+.question-card {
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 16px;
+  color: var(--ink);
+  text-align: left;
+  background: #eee8d766;
+  border: 1px solid #aaa087;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.question-card:hover {
+  background: #e8dfc766;
+  border-color: var(--gold);
+  transform: translateX(4px);
+}
+
+.question-card.asked {
+  color: #eee3ce;
+  background: var(--olive);
+  border-color: var(--olive-dark);
+}
+
+.question-card.asked:hover {
+  background: #414a3d;
+}
+
+.question-number {
+  color: var(--red);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.question-card.asked .question-number,
+.question-card.asked .question-copy small {
+  color: #c3a568;
+}
+
+.question-copy strong,
+.question-copy small {
+  display: block;
+}
+
+.question-copy strong {
+  font: 700 13px / 1.4 "Libre Baskerville", serif;
+}
+
+.question-copy small {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 7px;
+  letter-spacing: 0.13em;
+}
+
+.question-state {
+  color: var(--red);
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
+.question-card.asked .question-state {
+  color: #d9d7c8;
 }
 
 .completion {
@@ -765,7 +964,34 @@ footer {
   }
 
   .form-area {
+    padding: 0;
+  }
+
+  .form-view,
+  .questions-view {
     padding: 30px 17px;
+  }
+
+  .questions-heading {
+    grid-template-columns: 36px 1fr;
+  }
+
+  .question-count {
+    grid-column: 2;
+    padding: 0;
+    text-align: left;
+  }
+
+  .question-card {
+    grid-template-columns: 30px 1fr;
+  }
+
+  .question-state {
+    grid-column: 2;
+  }
+
+  .questions-trigger > b {
+    display: none;
   }
 
   .speech {

@@ -14,11 +14,18 @@ const modal=document.getElementById("modal");
 const modalText=document.getElementById("modalText");
 const closeModal=document.getElementById("closeModal");
 const downloadAgain=document.getElementById("downloadAgain");
+const formStage=document.getElementById("formStage");
+const openQuestions=document.getElementById("openQuestions");
+const closeQuestions=document.getElementById("closeQuestions");
+const questionList=document.getElementById("questionList");
+const questionCount=document.getElementById("questionCount");
+const formArea=document.querySelector(".form-area");
 
 let lastData=null,lastImage=null,typingToken=0,audioCtx=null;
 
 const base={
   start:"Bienvenido al centro de reclutamiento. Tu hogar está en guerra y necesitamos voluntarios para el viaje a la montaña. Siéntate; hay cosas que conviene explicar antes de que firmes.",
+  interrogation:"¿Quieres respuestas antes de firmar? De acuerdo. Pregunta cuanto necesites, aunque algunas respuestas están clasificadas incluso para quienes llevan uniforme.",
   name:"¿Tu nombre? Quedará registrado junto a los demás enviados. Procura que no tenga que aprenderlo de una placa conmemorativa.",
   gender:"Registrado. El ejército necesita saber quién parte, aunque los generales sólo parezcan interesados en saber quién regresa.",
   age:"¿{age} años? Hm. La montaña no respeta la edad. Allí arriba, el frío y lo que duerme bajo la piedra tratan a todos por igual.",
@@ -29,6 +36,44 @@ const base={
   oath:"Lee la declaración con cuidado. No es una excursión: los generales mantienen una prueba en la montaña. Quienes salen de ella hablan de fuego en las manos, gravedad torcida y otras cosas que no deberían ser posibles.",
   done:"Expediente completo. Enhorabuena, recluta. Ahora marcharás hacia una guerra que ya conoces y hacia una montaña que quizá te devuelva con un poder que no sabrás controlar."
 };
+
+// Añadir una pregunta nueva sólo requiere incorporar otro objeto a esta lista.
+const questions=[
+  {title:"¿Qué ocurre realmente en la montaña?",tag:"LA PRUEBA",response:"Los generales la llaman una prueba. Los soldados que vuelven la llaman una puerta. Nadie se pone de acuerdo sobre qué hay al otro lado."},
+  {title:"¿Por qué nos envían allí durante la guerra?",tag:"ÓRDENES",response:"Porque nuestras fronteras están cayendo y los generales creen que la montaña puede darnos una ventaja. O eso dicen en los informes que nos permiten leer."},
+  {title:"¿Qué habilidades han obtenido los supervivientes?",tag:"INFORMES",response:"Unos han doblado la gravedad a su alrededor. Otros han despertado fuego en las venas. También hay quienes regresaron sin poderes, pero con una sombra que no los abandona."},
+  {title:"¿Se puede rechazar la prueba?",tag:"ADVERTENCIA",response:"Puedes rechazarla. Nadie puede obligarte a subir. Pero la guerra seguirá esperando abajo, y los generales no suelen olvidar quién decidió quedarse atrás."},
+  {title:"¿Qué encontraremos en la cumbre?",tag:"ARCHIVO SELLADO",response:"Si lo supiera, no estaría sentado aquí leyendo formularios. La única orden es alcanzar la cumbre, sobrevivir y no aceptar ningún trato que la montaña te ofrezca."}
+];
+
+function updateQuestionCount(){
+  const asked=questions.filter(question=>question.asked).length;
+  questionCount.textContent=`${asked}/${questions.length}`;
+}
+
+function renderQuestions(){
+  questionList.innerHTML="";
+  questions.forEach((question,index)=>{
+    const button=document.createElement("button");
+    button.type="button";
+    button.className="question-card";
+    button.dataset.questionIndex=index;
+    button.innerHTML=`<span class="question-number">0${index+1}</span><span class="question-copy"><strong>${question.title}</strong><small>${question.tag}</small></span><span class="question-state">PREGUNTAR</span>`;
+    button.addEventListener("click",()=>{
+      question.asked=true;
+      button.classList.add("asked");
+      button.querySelector(".question-state").textContent="RESPONDIDA";
+      updateQuestionCount();
+      sayQuestion(question.response);
+    });
+    questionList.append(button);
+  });
+  updateQuestionCount();
+}
+
+function sayQuestion(response){
+  typeDialogue(response);
+}
 
 function soundTick(){
   try{
@@ -155,4 +200,14 @@ closeModal.addEventListener("click",()=>modal.classList.add("hidden"));
 modal.addEventListener("click",e=>{if(e.target===modal)modal.classList.add("hidden")});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")modal.classList.add("hidden")});
 
-say("start");updateProgress();
+openQuestions.addEventListener("click",()=>{
+  formArea.scrollTop=0;
+  formStage.classList.add("questions-open");
+  say("interrogation");
+});
+closeQuestions.addEventListener("click",()=>{
+  formArea.scrollTop=0;
+  formStage.classList.remove("questions-open");
+});
+
+renderQuestions();say("start");updateProgress();formArea.scrollTop=0;
