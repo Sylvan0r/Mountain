@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="es">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>Oficina de Reclutamiento — República de Veyra</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="css/css.css">
+    </head>
+    <body>
+        <div class="noise"></div>
+
+        <main class="document">
+        <header class="masthead">
+            <div class="emblem">★</div>
+            <div class="mast-copy">
+                <div class="classification">OFICINA CENTRAL DE RECLUTAMIENTO · DEPARTAMENTO DE GUERRA</div>
+                <h1>EXPEDIENTE DE ALISTAMIENTO</h1>
+                <p>FUERZAS ARMADAS DE LA REPÚBLICA DE VEYRA</p>
+            </div>
+            <div class="file-no">FORM<br><strong>R-17</strong></div>
+        </header>
+
+        <div class="layout">
+            <aside class="officer">
+                <div class="side-label"><span class="lamp"></span> ENTREVISTA · ACTIVA</div>
+
+                <div class="portrait-room">
+                    <div class="paper-portrait">
+                        <div class="placeholder-soldier">
+                            <div class="hat"></div><div class="face"></div>
+                            <div class="uniform"></div><div class="collar"></div>
+                            <div class="medal"></div>
+                        </div>
+                        <span>RETRATO DEL OFICIAL</span>
+                    </div>
+                </div>
+
+                <div class="speech">
+                    <div class="speaker">OFICIAL DE RECLUTAMIENTO</div>
+                    <p id="dialogue" aria-live="polite"></p>
+                    <span class="cursor" id="cursor"></span>
+                </div>
+
+                <div class="terminal">
+                    <span>TRANSMISIÓN</span>
+                    <strong id="soundState">AUDIO · ACTIVO</strong>
+                </div>
+            </aside>
+
+            <section class="form-area">
+            <div class="form-title">
+                <div>
+                    <div class="red-stamp">CONFIDENCIAL</div>
+                    <h2>Declaración del aspirante</h2>
+                    <p>Rellene todos los campos obligatorios. La información será incorporada al expediente de campaña.</p>
+                </div>
+                <div class="completion">
+                    <strong id="progressLabel">0%</strong>
+                    <div><i id="progressBar"></i></div>
+                    <small>EXPEDIENTE</small>
+                </div>
+            </div>
+
+            <form id="recruitForm">
+                <section>
+                    <div class="section-head"><span>01</span><h3>Identificación</h3></div>
+                    <div class="grid two">
+                        <label>Nombre completo <b>*</b>
+                            <input id="name" required placeholder="Ej. Klaus von Adler">
+                        </label>
+                        <label>Género
+                            <select id="gender">
+                                <option value="">Seleccionar</option>
+                                <option>Masculino</option><option>Femenino</option>
+                                <option>No binario</option><option>Otro</option>
+                                <option>Prefiero no indicarlo</option>
+                            </select>
+                        </label>
+                        <label>Edad <b>*</b>
+                            <input id="age" type="number" min="1" max="999" required placeholder="Ej. 24">
+                        </label>
+                        <label>Raza <b>*</b>
+                            <input id="race" required placeholder="Escribe tu raza">
+                        </label>
+                    </div>
+                </section>
+
+                <section>
+                    <div class="section-head"><span>02</span><h3>Apariencia y procedencia</h3></div>
+                    <label>Descripción física general <b>*</b>
+                        <textarea id="appearance" required placeholder="Altura, complexión, cabello, ojos, rasgos distintivos, heridas, forma de vestir..."></textarea>
+                    </label>
+                    <label>Costumbres y particularidades
+                        <textarea id="customs" placeholder="Hábitos, comidas, rituales, gestos, supersticiones, formas de hablar, tradiciones..."></textarea>
+                    </label>
+                </section>
+
+                <section>
+                    <div class="section-head"><span>03</span><h3>Identificación visual</h3></div>
+                    <label class="upload" id="uploadLabel">
+                        <input id="portrait" type="file" accept="image/png,image/jpeg,image/webp">
+                        <span class="upload-mark">+</span>
+                        <span><strong>Adjuntar retrato del aspirante</strong><small>PNG · JPG · WEBP · máximo 5 MB</small></span>
+                        <em>SELECCIONAR</em>
+                    </label>
+                    <div class="image-preview hidden" id="previewWrap">
+                        <img id="previewImage" alt="Retrato del aspirante">
+                        <div><strong id="previewName"></strong><button type="button" id="removePortrait">Eliminar retrato</button></div>
+                    </div>
+                </section>
+
+                <section>
+                    <div class="section-head"><span>04</span><h3>Declaración</h3></div>
+                    <label class="oath">
+                        <input id="oath" type="checkbox" required>
+                        <span class="box"></span>
+                        <span>Declaro que la información proporcionada corresponde a mi personaje y acepto que este expediente sea utilizado dentro de la campaña de D&amp;D.</span>
+                    </label>
+                </section>
+
+                <button class="submit" type="submit"><span>★</span> FINALIZAR EXPEDIENTE <span>★</span></button>
+                <p class="fineprint">DOCUMENTO FICTICIO · CAMPAÑA DE D&amp;D · NO REPRESENTA A NINGUNA ORGANIZACIÓN REAL</p>
+            </form>
+            </section>
+        </div>
+
+        <footer>VEYRA · ARCHIVO DE PERSONAL · R-17 · USO INTERNO DE CAMPAÑA</footer>
+        </main>
+
+        <div class="modal hidden" id="modal">
+            <div class="modal-card">
+                <div class="approved">✓</div>
+                <div class="classification">PROCESAMIENTO COMPLETADO</div>
+                <h2>Expediente listo</h2>
+                <p id="modalText"></p>
+                <div class="modal-actions">
+                <button id="downloadAgain" class="primary">GENERAR PDF DE NUEVO</button>
+                <button id="closeModal" class="secondary">CERRAR</button>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        <script src="js/info.js"></script>
+    </body>
+</html>
