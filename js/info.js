@@ -21,8 +21,29 @@ const closeQuestions=document.getElementById("closeQuestions");
 const questionList=document.getElementById("questionList");
 const questionCount=document.getElementById("questionCount");
 const formArea=document.querySelector(".form-area");
+const speech=document.querySelector(".speech");
+const dialogueMore=document.getElementById("dialogueMore");
 
-let lastData=null,lastImage=null,typingToken=0,audioCtx=null;
+let lastData=null,lastImage=null,typingToken=0,audioCtx=null,typingTimer=null,activeDialogueText="",dialogueFullText="",dialogueChunkSize=220,dialogueVisibleLength=0;
+
+const statsConfig=[
+  {key:"vitalidad",label:"Vitalidad",description:"Resistencia y aguante"},
+  {key:"fuerza",label:"Fuerza",description:"Potencia física"},
+  {key:"destreza",label:"Destreza",description:"Precisión y reflejos"},
+  {key:"agilidad",label:"Agilidad",description:"Velocidad y movilidad"},
+  {key:"carisma",label:"Carisma",description:"Presencia y liderazgo"},
+  {key:"inteligencia",label:"Inteligencia",description:"Razonamiento y sabiduría"}
+];
+
+const MAX_TOTAL_POINTS=15;
+const MIN_STAT_VALUE=1;
+const MAX_STAT_VALUE=10;
+const stats=statsConfig.map(stat=>({ ...stat, value: MIN_STAT_VALUE }));
+const statsGrid=document.getElementById("statsGrid");
+const statsSummary=document.getElementById("statsSummary");
+const statDialog=document.getElementById("statDialog");
+const statDialogText=document.getElementById("statDialogText");
+const closeStatDialog=document.getElementById("closeStatDialog");
 
 const base={
   start:"Bienvenido al centro de reclutamiento. Tu hogar está en guerra y necesitamos voluntarios para el viaje a la montaña. Siéntate; hay cosas que conviene explicar antes de que firmes.",
@@ -41,20 +62,22 @@ const base={
 // Añadir una pregunta nueva sólo requiere incorporar otro objeto a esta lista.
 const questions=[
   {id:"officer-name",title:"¿Cuál es su nombre, oficial?",tag:"IDENTIDAD",response:"Oficial Darien Von Voss. Llevo suficiente tiempo en este puesto como para reconocer a un voluntario asustado antes de que se siente."},
-  {id:"officer-service",unlockAfter:"officer-name",title:"¿Cuánto tiempo lleva reclutando?",tag:"TRAYECTORIA",response:"Once años. Empecé reclutando para la frontera y terminé enviando gente hacia la montaña. No es una promoción de la que me sienta orgulloso."},
-  {id:"war-cause",title:"¿Por qué empezó la guerra?",tag:"ORIGEN DEL CONFLICTO",response:"Empezó con una disputa por los pasos del norte y terminó convirtiéndose en una guerra por el control de los recursos de la montaña. Eso dicen los comunicados. La verdad suele enterrarse antes que los soldados."},
+  {id:"officer-service",unlockAfter:"officer-name",title:"¿Cuánto tiempo lleva reclutando?",tag:"TRAYECTORIA",response:"Once años. Empecé reclutando para la frontera y ahora estoy aquí, enviando gente hacia la montaña. No es una promoción de la que me sienta orgulloso."},
+  {id:"war-cause",title:"¿Por qué empezó la guerra?",tag:"ORIGEN DEL CONFLICTO",response:"El Reino del Cártel de la Pura, o como prefieran llamarlo los historiadores, el dominio de la cordillera, se vio obligado a expandirse por motivos desconocidos, y los reinos del norte no quisieron dar sus tierras. También hay presión desde el este, siendo nosotros. Básicamente lo que uno esperaría: es el control de los pasos, los puertos y la propia cordillera. Y como somos del este, estamos muy cerca de esa amenaza: somos la región que se encuentra a la espalda del mar, pero no por eso estamos lejos del conflicto."},
   {id:"war-duration",unlockAfter:"war-cause",title:"¿Cuánto tiempo lleva la guerra?",tag:"DURACIÓN DEL CONFLICTO",response:"Va por su sexto año. Al principio hablábamos de semanas; después, de meses. Ahora los mandos cuentan las estaciones y los soldados contamos los nombres que faltan."},
-  {id:"war-enemy",unlockAfter:"war-duration",title:"¿Contra quién es la guerra?",tag:"FUERZAS ENEMIGAS",response:"Contra la coalición de los reinos del norte. Pero no luchamos sólo contra sus ejércitos; también contra sus generales, que buscan el mismo poder que los nuestros encontraron en la montaña."},
-  {id:"war-objective",unlockAfter:"war-enemy",title:"¿Cuál es nuestro objetivo en esta guerra?",tag:"OBJETIVO MILITAR",response:"Mantener los pasos, proteger nuestro hogar y evitar que el enemigo llegue a la montaña. En los informes oficiales, eso es todo. En los informes que no llevan sello, la montaña es el verdadero objetivo."},
-  {id:"officer-belief",unlockAfter:"war-objective",title:"¿Usted cree que esta guerra es justa?",tag:"OPINIÓN DEL OFICIAL",response:"Creo que hay gente intentando sobrevivir a ambos lados de la frontera. Después de once años, dejé de confundir las órdenes de los generales con la justicia."},
-  {id:"mountain",unlockAfter:"officer-belief",title:"¿Qué ocurre realmente en la montaña?",tag:"LA PRUEBA",response:"Los generales la llaman una prueba. Los soldados que vuelven la llaman una puerta. Nadie se pone de acuerdo sobre qué hay al otro lado."},
-  {id:"war",unlockAfter:"mountain",title:"¿Por qué nos envían allí durante la guerra?",tag:"ÓRDENES",response:"Porque nuestras fronteras están cayendo y los generales creen que la montaña puede darnos una ventaja. O eso dicen en los informes que nos permiten leer."},
-  {id:"supplies",unlockAfter:"war",title:"¿Cuántos días de provisiones tendremos? ¿Recibiremos más durante la misión?",tag:"SUMINISTROS",response:"Partiréis con provisiones para doce días. No hay garantía de recibir más: los convoyes no pueden cruzar todos los pasos y la montaña altera las rutas. Racionad desde el primer amanecer; nadie sabe cuánto durará el regreso."},
-  {id:"platoons",unlockAfter:"supplies",title:"¿Cuántos pelotones han enviado ya?",tag:"REGISTRO DE MARCHA",response:"Más de los que aparecen en los informes públicos. Cada pelotón que parte deja de figurar como unidad en cuanto cruza el paso de la montaña. Los altos mandos prefieren llamarlo rotación de personal."},
-  {id:"powers",unlockAfter:"platoons",title:"¿Qué habilidades han obtenido los generales?",tag:"HIPÓTESIS DEL RITUAL",response:"Los altos mandos creen que sus habilidades no son un accidente. Suponen que proceden del ritual realizado en la montaña: fuego, gravedad y otras anomalías serían el precio o la recompensa de haberlo completado."},
-  {id:"refusal",unlockAfter:"powers",title:"¿Se puede rechazar la prueba?",tag:"ADVERTENCIA",response:"Puedes rechazarla. Nadie puede obligarte a subir. Pero la guerra seguirá esperando abajo, y los generales no suelen olvidar quién decidió quedarse atrás."},
-  {id:"war-future",unlockAfter:"refusal",title:"¿Cómo ve el futuro de la guerra? ¿Cree que vamos a ganar?",tag:"PRONÓSTICO",response:"Si seguimos luchando como hasta ahora, no ganaremos; sólo aprenderemos a perder más despacio. Aun así, creo que todavía podemos vencer si encontramos la forma de detener a los generales antes de que conviertan la montaña en un arma."},
-  {id:"summit",unlockAfter:"war-future",title:"¿Qué encontraremos en la cumbre?",tag:"ARCHIVO SELLADO",response:"Si lo supiera, no estaría sentado aquí leyendo formularios. La única orden es alcanzar la cumbre, sobrevivir y no aceptar ningún trato que la montaña te ofrezca."}
+  {id:"war-enemy",unlockAfter:"war-duration",title:"¿Contra quién es la guerra?",tag:"FUERZAS ENEMIGAS",response:"No estamos peleando sólo contra el norte. Estamos luchando contra el reino de la cordillera y contra los ejércitos del norte, que han hecho que el conflicto se vuelva imposible de cerrar por medios diplomáticos. El este no es neutral: somos parte del problema, pero también somos parte de la resistencia, y por eso la republica de Veyra nos está reclutando."},
+  {id:"east-front",unlockAfter:"war-enemy",title:"¿Los del este están con nosotros?",tag:"FRONTERA DEL ESTE",response:"Sí. Los del este estamos con la República de Veyra. Somos la gente que nació entre el mar y la frontera, la que ve cada día el peso del conflicto. Por eso mismo nos alistan aquí: no por ser más valientes, sino porque estamos más cerca de la guerra y de la amenaza que llega desde el norte y desde la cordillera."},
+  {id:"enemy-ship",unlockAfter:"east-front",title:"¿Vamos a tener que cruzar el mar?",tag:"TRASLADO",response:"Sí. El viaje por mar está garantizado. La mayoría de los reclutas no cruza la cordillera a pie ni de golpe. Algunos tendrán que llegar al frente por barco, y no será un viaje tranquilo. El transporte no será amable; será militar, a menudo capturado, y siempre vigilado por la misma amenaza a la que se dirigen."},
+  {id:"collars",unlockAfter:"enemy-ship",title:"¿Qué ocurre con los miembros de razas peligrosas?",tag:"CONTROL MILITAR",response:"Hay collares. No son adornos. Los llevan algunos de la milicia y algunos reclutados con sangre peligrosa o con rasgos que los mandos consideran incontrolables. Son dispositivos de control para vigilarlos, marcarlos y, si hace falta, detenerlos. Los superiores pueden ver su pulso, su fuerza y su intención como si fueran su propio reloj de guerra."},
+  {id:"war-objective",unlockAfter:"collars",title:"¿Cuál es nuestro objetivo en esta guerra?",tag:"OBJETIVO MILITAR",response:"Mantener los pasos, proteger nuestro hogar y evitar que el enemigo llegue al interior. En los informes oficiales, eso es todo. Pero los expertos saben que la verdadera prioridad es impedir que el reino de la cordillera consolide su poder sobre los puertos y la cadena montañosa."},
+  {id:"officer-belief",unlockAfter:"war-objective",title:"¿Usted cree que esta guerra es justa?",tag:"OPINIÓN DEL OFICIAL",response:"Creo que hay gente intentando sobrevivir a ambos lados de la frontera. Después de once años, dejé de confundir las órdenes de los generales con la justicia. Lo que deciden los mandos no siempre coincide con lo que la gente necesita."},
+  {id:"mountain",unlockAfter:"officer-belief",title:"¿Qué ocurre realmente en esa montaña?",tag:"LA PRUEBA",response:"Los altos mandos dan por hecho que es algo anómalo, quizá más peligroso que natural. Pero eso es una suposición, no un hecho probado. Lo único que sabemos con certeza es que ese lugar altera la lógica, ya que segun las suposiciones esa es la última prueba de los generales enemigos."},
+  {id:"powers",unlockAfter:"mountain",title:"¿Los generales enemigos no son normales?",tag:"HIPÓTESIS DEL RITUAL",response:"Eso es precisamente una hipótesis de los altos mandos. No hay confirmación ni archivo que lo afirme como verdad. Lo único que se sabe es que algunos generales han demostrado capacidades fuera de lo común, pero nadie ha podido demostrar si es el ritual, la cordillera o un poder ajeno a la guerra."},
+  {id:"generals",unlockAfter:"powers",title:"¿Hay algun general enemigo a tener en cuenta?",tag:"ARCHIVO DE GENERALES",response:"Poca información fiable por la falta de supervivientes. Se dice que uno puede controlar el agua y crear ráfagas que cortan el acero como si fuera tela. Y también se ha documentado otra figura, aunque mucho menos documentada. Parece ser alguien capaz de crear fuego en cantidades inmensas. No hay más datos, más que datos hay pruebas, con zonas de batallas calcinadas. Eso basta para que la gente se asuste."},
+  {id:"refusal",unlockAfter:"generals",title:"¿Se puede rechazar la prueba?",tag:"ADVERTENCIA",response:"Puedes rechazarla. Nadie puede obligarte a subir. Pero la guerra seguirá esperando abajo, y los generales no suelen olvidar quién decidió quedarse atrás. El collar no lo hace mejor, y quienes se resisten a la autoridad militar rara vez tienen un futuro largo."},
+  {id:"war-future",unlockAfter:"refusal",title:"¿Cómo ve el futuro de la guerra? ¿Cree que vamos a ganar?",tag:"PRONÓSTICO",response:"Si seguimos luchando como hasta ahora, no ganaremos; sólo aprenderemos a perder más despacio. Aun así, creo que todavía podemos vencer si encontramos la forma de detener a los generales antes de que conviertan la cordillera en un arma."},
+  {id:"supplies",unlockAfter:"war-future",title:"¿Cuántos días de provisiones tendremos?",tag:"SUMINISTROS",response:"Partiréis con provisiones para doce días. No hay garantía de recibir más: los convoyes no pueden cruzar todos los pasos y la cordillera altera las rutas. Racionad desde el primer amanecer; nadie sabe cuánto durará el regreso."},
+  {id:"summit",unlockAfter:"supplies",title:"¿Qué encontraremos en la cima?",tag:"ARCHIVO SELLADO",response:"Si lo supiera, no estaría sentado aquí leyendo formularios. La única orden es alcanzar la cima, sobrevivir y no aceptar ningún trato que la cordillera te ofrezca. Y si te ofrece algo, hazte a la idea de que no te lo va a ofrecer por tu bien."}
 ];
 
 function updateQuestionCount(){
@@ -105,21 +128,73 @@ function soundTick(){
   }catch(e){}
 }
 
+function updateDialogueIndicator(){
+  const hasMore = Boolean(dialogueFullText) && dialogueVisibleLength < dialogueFullText.length;
+  dialogueMore?.classList.toggle("visible", hasMore);
+  if (dialogue.scrollHeight > dialogue.clientHeight) {
+    dialogue.scrollTop = dialogue.scrollHeight;
+  }
+}
+
+function revealFullDialogue(){
+  if (!dialogueFullText) return;
+  if (typingTimer) {
+    clearTimeout(typingTimer);
+    typingTimer = null;
+  }
+
+  dialogueVisibleLength = dialogueFullText.length;
+  dialogue.textContent = dialogueFullText;
+  activeDialogueText = "";
+  dialogueFullText = "";
+  cursor.style.opacity = 0;
+  dialogueMore?.classList.remove("visible");
+  dialogue.scrollTop = dialogue.scrollHeight;
+}
+
+function finishDialogue(){
+  revealFullDialogue();
+}
+
 function typeDialogue(text){
-  const token=++typingToken; dialogue.textContent=""; cursor.style.opacity=1;
-  let i=0;
-  const write=()=>{
-    if(token!==typingToken)return;
-    if(i>=text.length)return;
-    const ch=text[i++];
-    dialogue.textContent+=ch;
-    if(ch.trim())soundTick();
-    let delay=28+Math.random()*24;
-    if(",;:".includes(ch))delay+=70;
-    if(".!?".includes(ch))delay+=170;
-    if(ch==="…")delay+=280;
-    setTimeout(write,delay);
+  if (typingTimer) clearTimeout(typingTimer);
+
+  typingToken++;
+  const token = typingToken;
+  activeDialogueText = text;
+  dialogueFullText = text;
+  dialogueVisibleLength = 0;
+  dialogue.textContent = "";
+  cursor.style.opacity = 1;
+  dialogueMore?.classList.remove("visible");
+
+  const write = () => {
+    if (token !== typingToken) return;
+
+    if (dialogueVisibleLength >= text.length) {
+      activeDialogueText = "";
+      dialogueFullText = "";
+      dialogueVisibleLength = 0;
+      cursor.style.opacity = 0;
+      dialogueMore?.classList.remove("visible");
+      return;
+    }
+
+    dialogueVisibleLength += 1;
+    const ch = text[dialogueVisibleLength - 1];
+    dialogue.textContent = text.slice(0, dialogueVisibleLength);
+
+    if (ch && ch.trim()) soundTick();
+
+    let delay = 18 + Math.random() * 40;
+    if (",;:".includes(ch)) delay += 35;
+    if (".!?".includes(ch)) delay += 55;
+    if (ch === "…") delay += 90;
+
+    typingTimer = setTimeout(write, delay);
+    updateDialogueIndicator();
   };
+
   write();
 }
 
@@ -160,38 +235,290 @@ portrait.addEventListener("change",()=>{
 });
 removePortrait.addEventListener("click",()=>{portrait.value="";lastImage=null;previewWrap.classList.add("hidden");uploadLabel.classList.remove("hidden");updateProgress()});
 
-function safe(s){return String(s||"—").replace(/[^\x20-\x7EÀ-ÿ]/g,"?")}
+function getSpentPoints(){
+  return stats.reduce((sum, stat)=>sum + Math.max(0, stat.value - MIN_STAT_VALUE), 0);
+}
+
+function getAvailableStatsPoints(){
+  return MAX_TOTAL_POINTS - getSpentPoints();
+}
+
+function showStatDialog(message){
+  if(!statDialog || !statDialogText) return;
+  statDialogText.textContent = message;
+  statDialog.classList.remove("hidden");
+}
+
+function renderHexagon(){
+  const svg=document.getElementById("statsHexagon");
+  const shape=document.getElementById("statsHexagonShape");
+  const labels=document.getElementById("hexagonLabels");
+  if(!svg || !shape || !labels) return;
+
+  const centerX=110;
+  const centerY=110;
+  const innerRadius=30;
+  const outerRadius=82;
+  const points=[];
+  const labelGroup=[];
+
+  stats.forEach((stat, index)=>{
+    const angle=(-90 + index * 60) * (Math.PI / 180);
+    const normalized = (stat.value - MIN_STAT_VALUE) / (MAX_STAT_VALUE - MIN_STAT_VALUE);
+    const radius = innerRadius + normalized * (outerRadius - innerRadius);
+    const x = centerX + Math.cos(angle) * radius;
+    const y = centerY + Math.sin(angle) * radius;
+    points.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+
+    const labelX = centerX + Math.cos(angle) * (outerRadius + 18);
+    const labelY = centerY + Math.sin(angle) * (outerRadius + 18);
+
+    labelGroup.push(`
+      <text x="${labelX.toFixed(2)}" y="${labelY.toFixed(2)}" text-anchor="middle" dominant-baseline="middle" class="hex-label">${stat.label.slice(0, 3).toUpperCase()}</text>
+    `);
+  });
+
+  const baseHexagon = [
+    "110,18",
+    "184,59",
+    "184,161",
+    "110,202",
+    "36,161",
+    "36,59"
+  ].join(" ");
+
+  svg.setAttribute("data-shape", points.join(" "));
+  shape.setAttribute("points", points.join(" "));
+  labels.innerHTML = labelGroup.join("");
+  svg.setAttribute("aria-label", `Hexágono de estadísticas: ${stats.map(s => `${s.label} ${s.value}`).join(", ")}`);
+}
+
+function renderStats(){
+  if(!statsGrid)return;
+
+  const remaining = getAvailableStatsPoints();
+  if(statsSummary) {
+    statsSummary.textContent = `Puntos disponibles: ${remaining} / ${MAX_TOTAL_POINTS}`;
+  }
+
+  statsGrid.innerHTML="";
+  stats.forEach(stat=>{
+    const card=document.createElement("div");
+    card.className="stat-card";
+    const isMin = stat.value <= MIN_STAT_VALUE;
+    const isMax = stat.value >= MAX_STAT_VALUE;
+    const wouldExceedLimit = getAvailableStatsPoints() <= 0;
+    card.innerHTML=`
+      <div class="stat-info">
+        <strong>${stat.label}</strong>
+        <small>${stat.description}</small>
+      </div>
+      <div class="stat-controls">
+        <button type="button" class="stat-button" data-stat="${stat.key}" data-action="decrease" aria-label="Disminuir ${stat.label}" ${isMin ? "disabled" : ""}>−</button>
+        <span class="stat-value">${stat.value}</span>
+        <button type="button" class="stat-button" data-stat="${stat.key}" data-action="increase" aria-label="Aumentar ${stat.label}" ${isMax || wouldExceedLimit ? "disabled" : ""}>+</button>
+      </div>
+    `;
+    statsGrid.appendChild(card);
+  });
+
+  renderHexagon();
+}
+
+function getStatsSummary(){
+  return stats.map(stat=>`${stat.label}: ${stat.value}`).join(" | ");
+}
+
+function safe(s){
+  return String(s || "—").replace(/[^\x20-\x7EÀ-ÿ·|/–—]/g, "?");
+}
+
+function getPdfHexagonPoints(cx, cy, radius){
+  return stats.map((stat,index)=>{
+    const angle = (-90 + index * 60) * (Math.PI / 180);
+    const normalized = (stat.value - MIN_STAT_VALUE) / (MAX_STAT_VALUE - MIN_STAT_VALUE);
+    const radial = 12 + normalized * (radius - 12);
+    return {
+      x: cx + Math.cos(angle) * radial,
+      y: cy + Math.sin(angle) * radial,
+      labelX: cx + Math.cos(angle) * (radius + 12),
+      labelY: cy + Math.sin(angle) * (radius + 12),
+      valueX: cx + Math.cos(angle) * (radial - 6),
+      valueY: cy + Math.sin(angle) * (radial - 6),
+      label: stat.label.slice(0, 3).toUpperCase(),
+      value: stat.value,
+      angle
+    };
+  });
+}
+
+function drawPdfHexagon(doc, cx, cy, radius){
+  const points = getPdfHexagonPoints(cx, cy, radius);
+
+  doc.setDrawColor(168, 146, 103);
+  doc.setLineWidth(0.6);
+
+  for (let ring = 18; ring <= radius; ring += 12) {
+    const ringPoints = points.map((point, idx) => {
+      const angle = (-90 + idx * 60) * (Math.PI / 180);
+      const x = cx + Math.cos(angle) * ring;
+      const y = cy + Math.sin(angle) * ring;
+      return { x, y };
+    });
+
+    ringPoints.forEach((point, index) => {
+      const prev = ringPoints[(index + ringPoints.length - 1) % ringPoints.length];
+      doc.line(prev.x, prev.y, point.x, point.y);
+    });
+  }
+
+  points.forEach((point, index) => {
+    const prev = points[(index + points.length - 1) % points.length];
+    doc.line(prev.x, prev.y, point.x, point.y);
+    doc.setFillColor(60, 55, 46);
+    doc.circle(point.x, point.y, 2.3, "F");
+    doc.setFillColor(230, 220, 189);
+    doc.setFont("courier", "bold");
+    doc.setFontSize(5.5);
+    doc.text(String(point.value), point.valueX, point.valueY + 0.8, { align: "center" });
+    doc.setFontSize(4.8);
+    doc.text(point.label, point.labelX, point.labelY + 0.8, { align: "center" });
+  });
+
+  doc.setDrawColor(200, 186, 150);
+  doc.circle(cx, cy, radius, "S");
+}
 
 function generatePDF(data){
   const doc=new jsPDF({unit:"mm",format:"a4"});
   const W=210,H=297;
-  doc.setFillColor(45,49,40);doc.rect(0,0,W,28,"F");
-  doc.setTextColor(224,220,202);doc.setFont("courier","bold");doc.setFontSize(9);doc.text("OFICINA CENTRAL DE RECLUTAMIENTO · DEPARTAMENTO DE GUERRA",14,10);
-  doc.setFont("times","bold");doc.setFontSize(18);doc.text("EXPEDIENTE DE ALISTAMIENTO",14,20);
-  doc.setFont("courier","normal");doc.setFontSize(7);doc.text("FORM R-17 · FUERZAS ARMADAS DE LA REPÚBLICA DE VEYRA",196,18,{align:"right"});
-  doc.setTextColor(40,40,35);doc.setDrawColor(140,120,75);doc.rect(12,37,186,244);
-  doc.setFont("courier","bold");doc.setFontSize(8);doc.setTextColor(139,51,43);doc.text("CONFIDENCIAL",18,47);
-  doc.setFont("times","bold");doc.setFontSize(19);doc.setTextColor(35,35,30);doc.text("DECLARACIÓN DEL ASPIRANTE",18,59);
-  doc.setDrawColor(165,155,130);doc.line(18,64,192,64);
-  let y=77;
-  const field=(label,val)=>{
-    doc.setFont("courier","bold");doc.setFontSize(7);doc.setTextColor(100,96,82);doc.text(label.toUpperCase(),18,y);
-    doc.setFont("courier","normal");doc.setFontSize(10);doc.setTextColor(35,35,30);doc.text(safe(val),18,y+6);y+=16;
-  };
-  field("Nombre",data.name);field("Género",data.gender);field("Edad",data.age);field("Raza",data.race);
-  doc.setFont("courier","bold");doc.setFontSize(7);doc.setTextColor(100,96,82);doc.text("DESCRIPCIÓN FÍSICA",18,y);y+=6;
-  doc.setFont("courier","normal");doc.setFontSize(9);doc.setTextColor(35,35,30);
-  let lines=doc.splitTextToSize(safe(data.appearance),145);doc.text(lines,18,y);y+=Math.max(20,lines.length*5+8);
-  doc.setFont("courier","bold");doc.setFontSize(7);doc.setTextColor(100,96,82);doc.text("COSTUMBRES Y PARTICULARIDADES",18,y);y+=6;
-  lines=doc.splitTextToSize(safe(data.customs),145);doc.setFont("courier","normal");doc.setFontSize(9);doc.setTextColor(35,35,30);doc.text(lines,18,y);
+
+  doc.setFillColor(42, 45, 38);
+  doc.rect(0, 0, W, 29, "F");
+  doc.setTextColor(230, 224, 208);
+  doc.setFont("courier", "bold");
+  doc.setFontSize(8);
+  doc.text("OFICINA CENTRAL DE RECLUTAMIENTO · DEPARTAMENTO DE GUERRA", 14, 10);
+  doc.setFont("times", "bold");
+  doc.setFontSize(17);
+  doc.text("EXPEDIENTE DE ALISTAMIENTO", 14, 19);
+  doc.setFont("courier", "normal");
+  doc.setFontSize(6.5);
+  doc.text("FORM R-17 · REPÚBLICA DE VEYRA", 196, 18, { align: "right" });
+
+  doc.setTextColor(35, 35, 32);
+  doc.setDrawColor(156, 138, 100);
+  doc.setLineWidth(0.7);
+  doc.rect(12, 34, 186, 247);
+
+  doc.setFillColor(239, 233, 216);
+  doc.roundedRect(18, 42, 170, 30, 3, 3, "F");
+  doc.setTextColor(58, 52, 42);
+  doc.setFont("courier", "bold");
+  doc.setFontSize(6.5);
+  doc.text("REINO DE VEYRA · ARCHIVO DE PERSONAL", 25, 53);
+  doc.setFont("times", "bold");
+  doc.setFontSize(14);
+  doc.text(safe(data.name), 25, 63);
+  doc.setFont("courier", "normal");
+  doc.setFontSize(7);
+  doc.text(`Género: ${safe(data.gender)} · Edad: ${safe(data.age)} · Raza: ${safe(data.race)}`, 25, 69);
+
   if(lastImage){
-    try{doc.addImage(lastImage,"JPEG",156,75,31,39);doc.setFontSize(6);doc.text("RETRATO",171.5,118,{align:"center"})}catch(e){}
-  }else{
-    doc.setDrawColor(150,140,115);doc.rect(156,75,31,43);doc.setFontSize(6);doc.text("SIN RETRATO",171.5,98,{align:"center"});
+    try {
+      doc.roundedRect(17, 78, 36, 44, 3, 3, "S");
+      doc.addImage(lastImage, "JPEG", 19, 80, 32, 40);
+      doc.setTextColor(78, 70, 58);
+      doc.setFont("courier", "bold");
+      doc.setFontSize(6);
+      doc.text("RETRATO", 35, 123, { align: "center" });
+    } catch (e) {
+      doc.setDrawColor(150, 140, 115);
+      doc.roundedRect(17, 78, 36, 44, 3, 3, "S");
+      doc.setTextColor(78, 70, 58);
+      doc.setFont("courier", "bold");
+      doc.setFontSize(6);
+      doc.text("SIN RETRATO", 35, 101, { align: "center" });
+    }
+  } else {
+    doc.setDrawColor(150, 140, 115);
+    doc.roundedRect(17, 78, 36, 44, 3, 3, "S");
+    doc.setTextColor(78, 70, 58);
+    doc.setFont("courier", "bold");
+    doc.setFontSize(6);
+    doc.text("SIN RETRATO", 35, 101, { align: "center" });
   }
-  doc.setFillColor(139,51,43);doc.setTextColor(245,237,216);doc.rect(156,125,31,10,"F");doc.setFont("courier","bold");doc.setFontSize(6);doc.text("RECLUTA",171.5,131.5,{align:"center"});
-  doc.setTextColor(110,105,91);doc.setFont("courier","normal");doc.setFontSize(6);doc.text("DOCUMENTO FICTICIO · CAMPAÑA DE D&D",105,270,{align:"center"});
-  doc.setFontSize(7);doc.text("VEYRA · ARCHIVO DE PERSONAL · R-17",105,276,{align:"center"});
+
+  doc.setFillColor(239, 233, 216);
+  doc.roundedRect(58, 78, 130, 44, 3, 3, "F");
+  doc.setTextColor(58, 52, 42);
+  doc.setFont("courier", "bold");
+  doc.setFontSize(6.5);
+  doc.text("RESUMEN", 68, 90);
+  doc.setFont("courier", "normal");
+  doc.setFontSize(7.2);
+  const details = [
+    `Nombre: ${safe(data.name)}`,
+    `Género: ${safe(data.gender)}`,
+    `Edad: ${safe(data.age)}`,
+    `Raza: ${safe(data.race)}`
+  ];
+  let detailY = 98;
+  details.forEach(line => {
+    doc.text(line, 68, detailY);
+    detailY += 7;
+  });
+
+  const hexX = 97;
+  const hexY = 164;
+  const hexR = 34;
+  doc.setFillColor(239, 233, 216);
+  doc.roundedRect(17, 132, 171, 76, 3, 3, "F");
+  doc.setTextColor(58, 52, 42);
+  doc.setFont("courier", "bold");
+  doc.setFontSize(6.5);
+  doc.text("ESTADÍSTICAS DEL ASPIRANTE", 27, 142);
+  drawPdfHexagon(doc, hexX, hexY, hexR);
+  doc.setFont("courier", "normal");
+  doc.setFontSize(6.8);
+  const statsText = safe(data.stats || getStatsSummary()).replace(/\|/g, " · ");
+  const statsLines = doc.splitTextToSize(statsText, 64);
+  doc.text(statsLines, 132, 150);
+
+  doc.setFillColor(239, 233, 216);
+  doc.roundedRect(17, 214, 82, 44, 3, 3, "F");
+  doc.setTextColor(58, 52, 42);
+  doc.setFont("courier", "bold");
+  doc.setFontSize(6.5);
+  doc.text("DESCRIPCIÓN FÍSICA", 25, 224);
+  doc.setFont("courier", "normal");
+  doc.setFontSize(6.8);
+  const appearanceLines = doc.splitTextToSize(safe(data.appearance), 66);
+  doc.text(appearanceLines, 25, 233);
+
+  doc.setFillColor(239, 233, 216);
+  doc.roundedRect(108, 214, 80, 44, 3, 3, "F");
+  doc.setTextColor(58, 52, 42);
+  doc.setFont("courier", "bold");
+  doc.setFontSize(6.5);
+  doc.text("COSTUMBRES", 116, 224);
+  doc.setFont("courier", "normal");
+  doc.setFontSize(6.8);
+  const customsLines = doc.splitTextToSize(safe(data.customs), 64);
+  doc.text(customsLines, 116, 233);
+
+  doc.setFillColor(43, 47, 39);
+  doc.rect(18, 252, 170, 18, "F");
+  doc.setTextColor(230, 224, 208);
+  doc.setFont("courier", "bold");
+  doc.setFontSize(7);
+  doc.text("ARCHIVO DE PERSONAL · VEYRA · R-17", 105, 261, { align: "center" });
+
+  doc.setTextColor(110, 105, 91);
+  doc.setFont("courier", "normal");
+  doc.setFontSize(6);
+  doc.text("DOCUMENTO FICTICIO · CAMPAÑA DE D&D", 105, 279, { align: "center" });
+
   const file="expediente_"+safe(data.name).replace(/\s+/g,"_").replace(/[^a-zA-Z0-9_-]/g,"")+".pdf";
   doc.save(file);
 }
@@ -205,7 +532,8 @@ form.addEventListener("submit",e=>{
     age:document.getElementById("age").value,
     race:document.getElementById("race").value.trim(),
     appearance:document.getElementById("appearance").value.trim(),
-    customs:document.getElementById("customs").value.trim()
+    customs:document.getElementById("customs").value.trim(),
+    stats:getStatsSummary()
   };
   say("done");
   generatePDF(lastData);
@@ -217,6 +545,27 @@ closeModal.addEventListener("click",()=>modal.classList.add("hidden"));
 modal.addEventListener("click",e=>{if(e.target===modal)modal.classList.add("hidden")});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")modal.classList.add("hidden")});
 
+const audioFile = "sfx/bgs.mp3";
+let bgmAudio = null;
+
+function ensureBgm(){
+  if(!bgmAudio){
+    bgmAudio = new Audio(audioFile);
+    bgmAudio.loop = true;
+    bgmAudio.volume = 0.03;
+    bgmAudio.preload = "auto";
+    bgmAudio.play().catch(() => {});
+  }
+}
+
+if (document.visibilityState === "visible") {
+  ensureBgm();
+}
+
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState === "visible") ensureBgm();
+});
+
 openQuestions.addEventListener("click",()=>{
   formArea.scrollTop=0;
   formStage.classList.add("questions-open");
@@ -227,4 +576,48 @@ closeQuestions.addEventListener("click",()=>{
   formStage.classList.remove("questions-open");
 });
 
-renderQuestions();say("start");updateProgress();formArea.scrollTop=0;
+document.addEventListener("click",event=>{
+  const button=event.target.closest(".stat-button");
+  if(!button)return;
+  const stat=stats.find(item=>item.key===button.dataset.stat);
+  if(!stat)return;
+  const delta=button.dataset.action==="increase"?1:-1;
+  const nextAvailable = getAvailableStatsPoints() - delta;
+
+  if(delta > 0 && nextAvailable < 0){
+    showStatDialog(`Has alcanzado el límite de ${MAX_TOTAL_POINTS} puntos. Distribuye mejor tus atributos antes de asignar más.`);
+    return;
+  }
+
+  if(delta < 0 && stat.value <= MIN_STAT_VALUE){
+    return;
+  }
+
+  stat.value=Math.max(MIN_STAT_VALUE,Math.min(MAX_STAT_VALUE,stat.value+delta));
+  renderStats();
+});
+
+closeStatDialog.addEventListener("click",()=>statDialog.classList.add("hidden"));
+statDialog.addEventListener("click",e=>{if(e.target===statDialog)statDialog.classList.add("hidden")});
+
+document.addEventListener("keydown",e=>{if(e.key==="Escape" && !statDialog.classList.contains("hidden"))statDialog.classList.add("hidden")});
+
+if(speech){
+  speech.addEventListener("click",()=>{
+    if (typingTimer) {
+      clearTimeout(typingTimer);
+      typingTimer = null;
+    }
+
+    if (dialogueFullText) {
+      revealFullDialogue();
+      return;
+    }
+
+    if (dialogue.scrollHeight > dialogue.clientHeight) {
+      dialogue.scrollTop = dialogue.scrollHeight;
+    }
+  });
+}
+
+renderQuestions();renderStats();say("start");updateProgress();formArea.scrollTop=0;

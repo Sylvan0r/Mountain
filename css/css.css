@@ -263,9 +263,10 @@ body::before {
 
 .speech {
   position: relative;
-  min-height: 135px;
+  min-height: 150px;
+  max-height: 180px;
   margin: 0 25px;
-  padding: 20px;
+  padding: 18px 18px 26px;
   color: #292b25;
   background: #d5ceb7;
   border: 1px solid #aaa487;
@@ -296,14 +297,47 @@ body::before {
 
 .speech p {
   position: relative;
+  max-height: 92px;
   min-height: 72px;
   margin: 0;
-  font: 400 15px / 1.65 "Libre Baskerville", serif;
+  padding-right: 8px;
+  overflow-y: auto;
+  font: 400 14px / 1.65 "Libre Baskerville", serif;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(74, 70, 50, 0.45) transparent;
+}
+
+.speech p::-webkit-scrollbar {
+  width: 6px;
+}
+
+.speech p::-webkit-scrollbar-thumb {
+  background: rgba(74, 70, 50, 0.45);
+  border-radius: 999px;
+}
+
+.dialogue-more {
+  position: absolute;
+  right: 22px;
+  bottom: 10px;
+  color: var(--red);
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.dialogue-more.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .cursor {
   position: absolute;
-  right: 20px;
+  right: 18px;
   bottom: 18px;
   width: 7px;
   height: 15px;
@@ -739,6 +773,149 @@ textarea:focus {
   border: 1px solid #9e9275;
 }
 
+.stats-panel {
+  padding: 16px;
+  background: #e7dfcf66;
+  border: 1px solid #b2a68a;
+}
+
+.stats-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.stats-panel-head strong {
+  display: block;
+  font: 700 12px "Libre Baskerville", serif;
+}
+
+.stats-panel-head small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.stats-summary {
+  margin-bottom: 12px;
+  color: var(--red);
+  font: 700 10px "IBM Plex Mono", monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hexagon-shell {
+  display: grid;
+  place-items: center;
+  margin: 6px 0 18px;
+  padding: 14px;
+  background: radial-gradient(circle at center, #f2ebd9, #d9d0b0);
+  border: 1px solid #b2a68a;
+}
+
+#statsHexagon {
+  width: min(260px, 100%);
+  height: auto;
+}
+
+.hexagon-base {
+  fill: rgba(118, 101, 71, 0.08);
+  stroke: #75664a;
+  stroke-width: 2;
+}
+
+.hexagon-shape {
+  fill: rgba(139, 51, 43, 0.38);
+  stroke: var(--red);
+  stroke-width: 2.4;
+  filter: drop-shadow(0 0 16px rgba(139, 51, 43, 0.3));
+}
+
+.hex-label {
+  fill: #403b32;
+  font: 700 8px "IBM Plex Mono", monospace;
+  letter-spacing: 0.08em;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #f3eedf;
+  border: 1px solid #b2a68a;
+}
+
+.stat-info {
+  min-width: 0;
+}
+
+.stat-info strong,
+.stat-info small {
+  display: block;
+}
+
+.stat-info strong {
+  font: 700 12px "Libre Baskerville", serif;
+}
+
+.stat-info small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 7px;
+  letter-spacing: 0.08em;
+}
+
+.stat-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.stat-button {
+  width: 28px;
+  height: 28px;
+  color: var(--ink);
+  font: 700 18px "IBM Plex Mono", monospace;
+  background: #e0d7c1;
+  border: 1px solid #a99e83;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.stat-button:hover:not(:disabled) {
+  color: #eee3ce;
+  background: var(--red);
+  border-color: var(--red);
+}
+
+.stat-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.stat-value {
+  display: inline-grid;
+  place-items: center;
+  min-width: 30px;
+  padding: 5px 8px;
+  color: var(--red);
+  font: 700 18px "Libre Baskerville", serif;
+  background: #eee7d6;
+  border: 1px solid #b2a68a;
+}
+
 .image-preview {
   display: flex;
   align-items: center;
@@ -852,7 +1029,19 @@ footer {
   backdrop-filter: blur(4px);
 }
 
-.modal-card {
+.stat-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(10, 11, 9, 0.76);
+  backdrop-filter: blur(4px);
+}
+
+.modal-card,
+.stat-dialog-card {
   width: min(500px, 100%);
   padding: 40px;
   text-align: center;
@@ -873,12 +1062,21 @@ footer {
   border-radius: 50%;
 }
 
-.modal-card h2 {
+.approved.small {
+  width: 42px;
+  height: 42px;
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+
+.modal-card h2,
+.stat-dialog-card h2 {
   margin: 8px 0;
   font: 700 27px "Libre Baskerville", serif;
 }
 
-.modal-card p {
+.modal-card p,
+.stat-dialog-card p {
   color: #686153;
   font-size: 10px;
   line-height: 1.7;
@@ -961,6 +1159,14 @@ footer {
 
   .two {
     grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hexagon-shell {
+    margin-bottom: 12px;
   }
 
   .form-area {

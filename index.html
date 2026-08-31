@@ -41,6 +41,7 @@
                 <div class="speech">
                     <div class="speaker" id="speakerName">OFICIAL DE RECLUTAMIENTO</div>
                     <p id="dialogue" aria-live="polite"></p>
+                    <span class="dialogue-more" id="dialogueMore" aria-hidden="true">▼ MÁS</span>
                     <span class="cursor" id="cursor"></span>
                 </div>
 
@@ -107,7 +108,28 @@
                             </section>
 
                             <section>
-                                <div class="section-head"><span>03</span><h3>Identificación visual</h3></div>
+                                <div class="section-head"><span>03</span><h3>Estadísticas del personaje</h3></div>
+                                <div class="stats-panel">
+                                    <div class="stats-panel-head">
+                                        <div>
+                                            <strong>Distribución del perfil</strong>
+                                            <small>Selecciona cómo se desarrolla tu personaje en la campaña.</small>
+                                        </div>
+                                    </div>
+                                    <div id="statsSummary" class="stats-summary">Puntos disponibles: 9 / 15</div>
+                                    <div class="hexagon-shell">
+                                        <svg id="statsHexagon" viewBox="0 0 220 220" role="img" aria-label="Hexágono de estadísticas del personaje">
+                                            <polygon class="hexagon-base" points="110,18 184,59 184,161 110,202 36,161 36,59"></polygon>
+                                            <polygon id="statsHexagonShape" class="hexagon-shape" points=""></polygon>
+                                            <g id="hexagonLabels"></g>
+                                        </svg>
+                                    </div>
+                                    <div id="statsGrid" class="stats-grid"></div>
+                                </div>
+                            </section>
+
+                            <section>
+                                <div class="section-head"><span>04</span><h3>Identificación visual</h3></div>
                                 <label class="upload" id="uploadLabel">
                                     <input id="portrait" type="file" accept="image/png,image/jpeg,image/webp">
                                     <span class="upload-mark">+</span>
@@ -121,7 +143,7 @@
                             </section>
 
                             <section>
-                                <div class="section-head"><span>04</span><h3>Declaración</h3></div>
+                                <div class="section-head"><span>05</span><h3>Declaración</h3></div>
                                 <label class="oath">
                                     <input id="oath" type="checkbox" required>
                                     <span class="box"></span>
@@ -162,6 +184,16 @@
                     <button id="downloadAgain" class="primary">GENERAR PDF DE NUEVO</button>
                     <button id="closeModal" class="secondary">CERRAR</button>
                 </div>
+            </div>
+        </div>
+
+        <div class="stat-dialog hidden" id="statDialog" aria-live="assertive">
+            <div class="stat-dialog-card">
+                <div class="approved small">!</div>
+                <div class="classification">LÍMITE DE PUNTOS</div>
+                <h2>Asignación agotada</h2>
+                <p id="statDialogText">No puedes repartir más de 15 puntos entre las estadísticas.</p>
+                <button id="closeStatDialog" class="primary" type="button">ENTENDIDO</button>
             </div>
         </div>
 
