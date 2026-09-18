@@ -32,15 +32,23 @@ const statsConfig=[
   {key:"destreza",label:"Destreza",description:"Precisión y reflejos"},
   {key:"agilidad",label:"Agilidad",description:"Velocidad y movilidad"},
   {key:"carisma",label:"Carisma",description:"Presencia y liderazgo"},
-  {key:"inteligencia",label:"Inteligencia",description:"Razonamiento y sabiduría"}
+  {key:"inteligencia",label:"Inteligencia",description:"Razonamiento y sabiduría"},
+  {key:"mente",label:"Mente",description:"Concentración y poder mágico"},
+  {key:"suerte",label:"Suerte",description:"Fortuna e instinto"}
 ];
 
-const MAX_TOTAL_POINTS=15;
-const MIN_STAT_VALUE=1;
+const MAX_TOTAL_POINTS=20;
+const MIN_STAT_VALUE=0;
 const MAX_STAT_VALUE=10;
+const BASE_RESOURCE_VALUE=10;
+const MAX_RESOURCE_VALUE=20;
 const stats=statsConfig.map(stat=>({ ...stat, value: MIN_STAT_VALUE }));
 const statsGrid=document.getElementById("statsGrid");
 const statsSummary=document.getElementById("statsSummary");
+const healthBar=document.getElementById("healthBar");
+const healthValue=document.getElementById("healthValue");
+const manaBar=document.getElementById("manaBar");
+const manaValue=document.getElementById("manaValue");
 const statDialog=document.getElementById("statDialog");
 const statDialogText=document.getElementById("statDialogText");
 const closeStatDialog=document.getElementById("closeStatDialog");
@@ -53,7 +61,7 @@ const base={
   age:"¿{age} años? Hm. La montaña no respeta la edad. Allí arriba, el frío y lo que duerme bajo la piedra tratan a todos por igual.",
   race:"¿{race}? Anotado. En la montaña dicen que la sangre y el origen importan menos que aquello en lo que puedas convertirte al salir.",
   appearance:"Necesito poder reconocerte en la frontera y, si los informes dicen la verdad, después de la prueba. Dame detalles; algunos vuelven con marcas que no tenían al subir.",
-  customs:"Costumbres y particularidades... bien. La guerra ya ha cambiado la vida de todos. Y la montaña, según los supervivientes, cambia algo más que eso.",
+  armament:"Armamento especial... bien. Si no traes un arma propia, el intendente asignará una pieza básica según tus aptitudes.",
   portrait:"Un rostro ayuda a recordar a los vivos. Adjunta un retrato; los generales exigen identificar a cada aspirante antes de enviarlo a la montaña.",
   oath:"Lee la declaración con cuidado. No es una excursión: los generales mantienen una prueba en la montaña. Quienes salen de ella hablan de fuego en las manos, gravedad torcida y otras cosas que no deberían ser posibles.",
   done:"Expediente completo. Enhorabuena, recluta. Ahora marcharás hacia una guerra que ya conoces y hacia una montaña que quizá te devuelva con un poder que no sabrás controlar."
@@ -243,6 +251,26 @@ function getAvailableStatsPoints(){
   return MAX_TOTAL_POINTS - getSpentPoints();
 }
 
+function getStatValue(key){
+  return stats.find(stat=>stat.key===key)?.value || MIN_STAT_VALUE;
+}
+
+function getResourceValue(key){
+  return BASE_RESOURCE_VALUE + getStatValue(key);
+}
+
+function renderResourceBars(){
+  const health=getResourceValue("vitalidad");
+  const mana=getResourceValue("mente");
+  const healthPercent=(health / MAX_RESOURCE_VALUE) * 100;
+  const manaPercent=(mana / MAX_RESOURCE_VALUE) * 100;
+
+  if(healthBar) healthBar.style.width=`${healthPercent}%`;
+  if(healthValue) healthValue.textContent=`${health} / ${MAX_RESOURCE_VALUE}`;
+  if(manaBar) manaBar.style.width=`${manaPercent}%`;
+  if(manaValue) manaValue.textContent=`${mana} / ${MAX_RESOURCE_VALUE}`;
+}
+
 function showStatDialog(message){
   if(!statDialog || !statDialogText) return;
   statDialogText.textContent = message;
@@ -261,9 +289,10 @@ function renderHexagon(){
   const outerRadius=82;
   const points=[];
   const labelGroup=[];
+  const angleStep=360 / stats.length;
 
   stats.forEach((stat, index)=>{
-    const angle=(-90 + index * 60) * (Math.PI / 180);
+    const angle=(-90 + index * angleStep) * (Math.PI / 180);
     const normalized = (stat.value - MIN_STAT_VALUE) / (MAX_STAT_VALUE - MIN_STAT_VALUE);
     const radius = innerRadius + normalized * (outerRadius - innerRadius);
     const x = centerX + Math.cos(angle) * radius;
@@ -278,19 +307,16 @@ function renderHexagon(){
     `);
   });
 
-  const baseHexagon = [
-    "110,18",
-    "184,59",
-    "184,161",
-    "110,202",
-    "36,161",
-    "36,59"
-  ].join(" ");
+  const basePoints=stats.map((stat,index)=>{
+    const angle=(-90 + index * angleStep) * (Math.PI / 180);
+    return `${(centerX + Math.cos(angle) * outerRadius).toFixed(2)},${(centerY + Math.sin(angle) * outerRadius).toFixed(2)}`;
+  }).join(" ");
 
+  svg.querySelector(".hexagon-base")?.setAttribute("points",basePoints);
   svg.setAttribute("data-shape", points.join(" "));
   shape.setAttribute("points", points.join(" "));
   labels.innerHTML = labelGroup.join("");
-  svg.setAttribute("aria-label", `Hexágono de estadísticas: ${stats.map(s => `${s.label} ${s.value}`).join(", ")}`);
+  svg.setAttribute("aria-label", `Polígono de estadísticas: ${stats.map(s => `${s.label} ${s.value}`).join(", ")}`);
 }
 
 function renderStats(){
@@ -322,11 +348,38 @@ function renderStats(){
     statsGrid.appendChild(card);
   });
 
+  renderResourceBars();
   renderHexagon();
 }
 
 function getStatsSummary(){
   return stats.map(stat=>`${stat.label}: ${stat.value}`).join(" | ");
+}
+
+function getResourceSummary(){
+  return {
+    health:getResourceValue("vitalidad"),
+    mana:getResourceValue("mente")
+  };
+}
+
+function getDefaultArmament(){
+  const weaponByStat={
+    vitalidad:"martillo de guerra",
+    fuerza:"espada corta y escudo",
+    destreza:"arco corto",
+    agilidad:"dagas gemelas",
+    carisma:"sable de mando",
+    inteligencia:"báculo táctico",
+    mente:"foco rúnico",
+    suerte:"pistola de chispa"
+  };
+  const bestStats=stats
+    .filter(stat=>stat.value>0)
+    .sort((a,b)=>b.value-a.value)
+    .slice(0,2);
+  if(!bestStats.length) return "espada corta y escudo de campaña";
+  return bestStats.map(stat=>weaponByStat[stat.key]).join(" y ");
 }
 
 function safe(s){
@@ -335,14 +388,14 @@ function safe(s){
 
 function getPdfHexagonPoints(cx, cy, radius){
   return stats.map((stat,index)=>{
-    const angle = (-90 + index * 60) * (Math.PI / 180);
+    const angle = (-90 + index * (360 / stats.length)) * (Math.PI / 180);
     const normalized = (stat.value - MIN_STAT_VALUE) / (MAX_STAT_VALUE - MIN_STAT_VALUE);
     const radial = 12 + normalized * (radius - 12);
     return {
       x: cx + Math.cos(angle) * radial,
       y: cy + Math.sin(angle) * radial,
-      labelX: cx + Math.cos(angle) * (radius + 12),
-      labelY: cy + Math.sin(angle) * (radius + 12),
+      labelX: cx + Math.cos(angle) * (radius + 4),
+      labelY: cy + Math.sin(angle) * (radius + 4),
       valueX: cx + Math.cos(angle) * (radial - 6),
       valueY: cy + Math.sin(angle) * (radial - 6),
       label: stat.label.slice(0, 3).toUpperCase(),
@@ -354,39 +407,46 @@ function getPdfHexagonPoints(cx, cy, radius){
 
 function drawPdfHexagon(doc, cx, cy, radius){
   const points = getPdfHexagonPoints(cx, cy, radius);
-
-  doc.setDrawColor(168, 146, 103);
-  doc.setLineWidth(0.6);
-
-  for (let ring = 18; ring <= radius; ring += 12) {
-    const ringPoints = points.map((point, idx) => {
-      const angle = (-90 + idx * 60) * (Math.PI / 180);
-      const x = cx + Math.cos(angle) * ring;
-      const y = cy + Math.sin(angle) * ring;
-      return { x, y };
-    });
-
-    ringPoints.forEach((point, index) => {
-      const prev = ringPoints[(index + ringPoints.length - 1) % ringPoints.length];
-      doc.line(prev.x, prev.y, point.x, point.y);
-    });
-  }
-
-  points.forEach((point, index) => {
-    const prev = points[(index + points.length - 1) % points.length];
-    doc.line(prev.x, prev.y, point.x, point.y);
-    doc.setFillColor(60, 55, 46);
-    doc.circle(point.x, point.y, 2.3, "F");
-    doc.setFillColor(230, 220, 189);
-    doc.setFont("courier", "bold");
-    doc.setFontSize(5.5);
-    doc.text(String(point.value), point.valueX, point.valueY + 0.8, { align: "center" });
-    doc.setFontSize(4.8);
-    doc.text(point.label, point.labelX, point.labelY + 0.8, { align: "center" });
+  const outerPoints = stats.map((stat,index)=>{
+    const angle = (-90 + index * (360 / stats.length)) * (Math.PI / 180);
+    return {
+      x: cx + Math.cos(angle) * radius,
+      y: cy + Math.sin(angle) * radius
+    };
   });
 
-  doc.setDrawColor(200, 186, 150);
-  doc.circle(cx, cy, radius, "S");
+  const drawPolygon = polygon => polygon.forEach((point,index)=>{
+    const next=polygon[(index + 1) % polygon.length];
+    doc.line(point.x, point.y, next.x, next.y);
+  });
+
+  doc.setDrawColor(168, 146, 103);
+  doc.setLineWidth(0.55);
+  drawPolygon(outerPoints);
+
+  doc.setDrawColor(139, 51, 43);
+  doc.setLineWidth(1);
+  drawPolygon(points);
+
+  doc.setTextColor(58, 52, 42);
+  doc.setFont("courier", "bold");
+  doc.setFontSize(4.8);
+  points.forEach(point=>{
+    doc.text(point.label, point.labelX, point.labelY + 0.8, { align: "center" });
+  });
+}
+
+function drawPdfResourceBar(doc, x, y, width, label, value, color){
+  doc.setFont("courier", "bold");
+  doc.setFontSize(6.5);
+  doc.setTextColor(58, 52, 42);
+  doc.text(label, x, y);
+  doc.setFont("courier", "normal");
+  doc.text(`${value} / ${MAX_RESOURCE_VALUE}`, x + width, y, {align:"right"});
+  doc.setFillColor(211, 202, 178);
+  doc.roundedRect(x, y + 3, width, 4, 1, 1, "F");
+  doc.setFillColor(...color);
+  doc.roundedRect(x, y + 3, Math.max(2, width * (value / MAX_RESOURCE_VALUE)), 4, 1, 1, "F");
 }
 
 function generatePDF(data){
@@ -454,7 +514,7 @@ function generatePDF(data){
   doc.setTextColor(58, 52, 42);
   doc.setFont("courier", "bold");
   doc.setFontSize(6.5);
-  doc.text("RESUMEN", 68, 90);
+  doc.text("RESUMEN", 68, 87);
   doc.setFont("courier", "normal");
   doc.setFontSize(7.2);
   const details = [
@@ -463,17 +523,18 @@ function generatePDF(data){
     `Edad: ${safe(data.age)}`,
     `Raza: ${safe(data.race)}`
   ];
-  let detailY = 98;
+  let detailY = 95;
   details.forEach(line => {
     doc.text(line, 68, detailY);
     detailY += 7;
   });
 
-  const hexX = 97;
-  const hexY = 164;
-  const hexR = 34;
+  const hexX = 57;
+  const hexY = 171;
+  const hexR = 19;
+  const resources=getResourceSummary();
   doc.setFillColor(239, 233, 216);
-  doc.roundedRect(17, 132, 171, 76, 3, 3, "F");
+  doc.roundedRect(17, 132, 171, 78, 3, 3, "F");
   doc.setTextColor(58, 52, 42);
   doc.setFont("courier", "bold");
   doc.setFontSize(6.5);
@@ -481,38 +542,45 @@ function generatePDF(data){
   drawPdfHexagon(doc, hexX, hexY, hexR);
   doc.setFont("courier", "normal");
   doc.setFontSize(6.8);
-  const statsText = safe(data.stats || getStatsSummary()).replace(/\|/g, " · ");
-  const statsLines = doc.splitTextToSize(statsText, 64);
-  doc.text(statsLines, 132, 150);
+  stats.forEach((stat, index)=>{
+    const rowY=149 + index * 5.2;
+    doc.setTextColor(58, 52, 42);
+    doc.text(stat.label.toUpperCase(), 132, rowY);
+    doc.setFont("courier", "bold");
+    doc.text(String(stat.value), 184, rowY, {align:"right"});
+    doc.setFont("courier", "normal");
+  });
+  drawPdfResourceBar(doc, 105, 198, 36, "VIDA", resources.health, [139, 51, 43]);
+  drawPdfResourceBar(doc, 151, 198, 36, "MANÁ", resources.mana, [63, 92, 119]);
 
   doc.setFillColor(239, 233, 216);
-  doc.roundedRect(17, 214, 82, 44, 3, 3, "F");
+  doc.roundedRect(17, 216, 82, 40, 3, 3, "F");
   doc.setTextColor(58, 52, 42);
   doc.setFont("courier", "bold");
   doc.setFontSize(6.5);
-  doc.text("DESCRIPCIÓN FÍSICA", 25, 224);
+  doc.text("DESCRIPCIÓN FÍSICA", 25, 226);
   doc.setFont("courier", "normal");
   doc.setFontSize(6.8);
   const appearanceLines = doc.splitTextToSize(safe(data.appearance), 66);
-  doc.text(appearanceLines, 25, 233);
+  doc.text(appearanceLines, 25, 235);
 
   doc.setFillColor(239, 233, 216);
-  doc.roundedRect(108, 214, 80, 44, 3, 3, "F");
+  doc.roundedRect(108, 216, 80, 40, 3, 3, "F");
   doc.setTextColor(58, 52, 42);
   doc.setFont("courier", "bold");
   doc.setFontSize(6.5);
-  doc.text("COSTUMBRES", 116, 224);
+  doc.text("ARMAMENTO ESPECIAL", 116, 226);
   doc.setFont("courier", "normal");
   doc.setFontSize(6.8);
-  const customsLines = doc.splitTextToSize(safe(data.customs), 64);
-  doc.text(customsLines, 116, 233);
+  const armamentLines = doc.splitTextToSize(safe(data.armament), 64);
+  doc.text(armamentLines, 116, 235);
 
   doc.setFillColor(43, 47, 39);
   doc.rect(18, 252, 170, 18, "F");
   doc.setTextColor(230, 224, 208);
   doc.setFont("courier", "bold");
   doc.setFontSize(7);
-  doc.text("ARCHIVO DE PERSONAL · VEYRA · R-17", 105, 261, { align: "center" });
+  doc.text("ARCHIVO DE PERSONAL · VEYRA · R-17", 105, 262, { align: "center" });
 
   doc.setTextColor(110, 105, 91);
   doc.setFont("courier", "normal");
@@ -532,7 +600,7 @@ form.addEventListener("submit",e=>{
     age:document.getElementById("age").value,
     race:document.getElementById("race").value.trim(),
     appearance:document.getElementById("appearance").value.trim(),
-    customs:document.getElementById("customs").value.trim(),
+    armament:document.getElementById("armament").value.trim() || getDefaultArmament(),
     stats:getStatsSummary()
   };
   say("done");

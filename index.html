@@ -102,8 +102,8 @@
                                 <label>Descripción física general <b>*</b>
                                     <textarea id="appearance" required placeholder="Altura, complexión, cabello, ojos, rasgos distintivos, heridas, forma de vestir..."></textarea>
                                 </label>
-                                <label>Costumbres y particularidades
-                                    <textarea id="customs" placeholder="Hábitos, comidas, rituales, gestos, supersticiones, formas de hablar, tradiciones..."></textarea>
+                                <label>Armamento especial
+                                    <textarea id="armament" placeholder="Describe un arma única de tu personaje. Si lo dejas vacío, se asignará un arma básica según sus estadísticas."></textarea>
                                 </label>
                             </section>
 
@@ -117,8 +117,20 @@
                                         </div>
                                     </div>
                                     <div id="statsSummary" class="stats-summary">Puntos disponibles: 9 / 15</div>
+                                    <div class="resource-bars" aria-label="Recursos del personaje">
+                                        <div class="resource-bar resource-health">
+                                            <div class="resource-bar-head"><strong>VIDA</strong><span id="healthValue">10 / 20</span></div>
+                                            <div class="resource-track"><i id="healthBar"></i></div>
+                                            <small>Escala con Vitalidad</small>
+                                        </div>
+                                        <div class="resource-bar resource-mana">
+                                            <div class="resource-bar-head"><strong>MANÁ</strong><span id="manaValue">10 / 20</span></div>
+                                            <div class="resource-track"><i id="manaBar"></i></div>
+                                            <small>Escala con Mente</small>
+                                        </div>
+                                    </div>
                                     <div class="hexagon-shell">
-                                        <svg id="statsHexagon" viewBox="0 0 220 220" role="img" aria-label="Hexágono de estadísticas del personaje">
+                                            <svg id="statsHexagon" viewBox="0 0 220 220" role="img" aria-label="Polígono de estadísticas del personaje">
                                             <polygon class="hexagon-base" points="110,18 184,59 184,161 110,202 36,161 36,59"></polygon>
                                             <polygon id="statsHexagonShape" class="hexagon-shape" points=""></polygon>
                                             <g id="hexagonLabels"></g>
