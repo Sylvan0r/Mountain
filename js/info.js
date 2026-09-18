@@ -29,6 +29,7 @@ const officerOpenImage="img/open.png";
 const musicToggle=document.getElementById("musicToggle");
 const musicVolume=document.getElementById("musicVolume");
 const musicVolumeLabel=document.getElementById("musicVolumeLabel");
+const soundState=document.getElementById("soundState");
 
 let lastData=null,lastImage=null,typingToken=0,audioCtx=null,typingTimer=null,activeDialogueText="",dialogueFullText="",dialogueChunkSize=220,dialogueVisibleLength=0;
 
@@ -639,7 +640,7 @@ closeModal.addEventListener("click",()=>modal.classList.add("hidden"));
 modal.addEventListener("click",e=>{if(e.target===modal)modal.classList.add("hidden")});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")modal.classList.add("hidden")});
 
-const audioFile = "sfx/bgs.mp3";
+const audioFile = new URL("sfx/bgs.mp3", document.baseURI).href;
 let bgmAudio = null;
 let musicMuted = false;
 
@@ -649,9 +650,21 @@ function ensureBgm(){
     bgmAudio.loop = true;
     bgmAudio.volume = Number(musicVolume?.value || 3) / 100;
     bgmAudio.preload = "auto";
+    bgmAudio.addEventListener("playing",()=>{
+      if(soundState) soundState.textContent="AUDIO · ACTIVO";
+    });
+    bgmAudio.addEventListener("pause",()=>{
+      if(soundState && !bgmAudio.ended) soundState.textContent="AUDIO · PAUSADO";
+    });
+    bgmAudio.addEventListener("error",()=>{
+      if(soundState) soundState.textContent="AUDIO · NO DISPONIBLE";
+    });
   }
   bgmAudio.muted = musicMuted;
-  bgmAudio.play().catch(() => {});
+  const playback=bgmAudio.play();
+  playback?.catch(()=>{
+    if(soundState) soundState.textContent="AUDIO · PULSA PARA ACTIVAR";
+  });
 }
 
 function updateMusicControls(){
