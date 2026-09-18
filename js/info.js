@@ -23,6 +23,9 @@ const questionCount=document.getElementById("questionCount");
 const formArea=document.querySelector(".form-area");
 const speech=document.querySelector(".speech");
 const dialogueMore=document.getElementById("dialogueMore");
+const officerPortrait=document.getElementById("officerPortrait");
+const officerCloseImage="img/close.png";
+const officerOpenImage="img/open.png";
 
 let lastData=null,lastImage=null,typingToken=0,audioCtx=null,typingTimer=null,activeDialogueText="",dialogueFullText="",dialogueChunkSize=220,dialogueVisibleLength=0;
 
@@ -71,12 +74,12 @@ const base={
 const questions=[
   {id:"officer-name",title:"¿Cuál es su nombre, oficial?",tag:"IDENTIDAD",response:"Oficial Darien Von Voss. Llevo suficiente tiempo en este puesto como para reconocer a un voluntario asustado antes de que se siente."},
   {id:"officer-service",unlockAfter:"officer-name",title:"¿Cuánto tiempo lleva reclutando?",tag:"TRAYECTORIA",response:"Once años. Empecé reclutando para la frontera y ahora estoy aquí, enviando gente hacia la montaña. No es una promoción de la que me sienta orgulloso."},
-  {id:"war-cause",title:"¿Por qué empezó la guerra?",tag:"ORIGEN DEL CONFLICTO",response:"El Reino del Cártel de la Pura, o como prefieran llamarlo los historiadores, el dominio de la cordillera, se vio obligado a expandirse por motivos desconocidos, y los reinos del norte no quisieron dar sus tierras. También hay presión desde el este, siendo nosotros. Básicamente lo que uno esperaría: es el control de los pasos, los puertos y la propia cordillera. Y como somos del este, estamos muy cerca de esa amenaza: somos la región que se encuentra a la espalda del mar, pero no por eso estamos lejos del conflicto."},
+  {id:"war-cause",title:"¿Por qué empezó la guerra?",tag:"ORIGEN DEL CONFLICTO",response:"El Reino del Cártel de la Pura, o como prefieran llamarlo los historiadores, se vio 'obligado' a expandirse por motivos desconocidos, y los reinos del norte no quisieron dar sus tierras. También hay presión desde el este, siendo nosotros. Básicamente lo que uno esperaría: es el control de puntos estratégicos. Y como somos del este, estamos muy cerca de esa amenaza: somos la región que se encuentra a la espalda del mar, pero no por eso estamos lejos del conflicto."},
   {id:"war-duration",unlockAfter:"war-cause",title:"¿Cuánto tiempo lleva la guerra?",tag:"DURACIÓN DEL CONFLICTO",response:"Va por su sexto año. Al principio hablábamos de semanas; después, de meses. Ahora los mandos cuentan las estaciones y los soldados contamos los nombres que faltan."},
   {id:"war-enemy",unlockAfter:"war-duration",title:"¿Contra quién es la guerra?",tag:"FUERZAS ENEMIGAS",response:"No estamos peleando sólo contra el norte. Estamos luchando contra el reino de la cordillera y contra los ejércitos del norte, que han hecho que el conflicto se vuelva imposible de cerrar por medios diplomáticos. El este no es neutral: somos parte del problema, pero también somos parte de la resistencia, y por eso la republica de Veyra nos está reclutando."},
   {id:"east-front",unlockAfter:"war-enemy",title:"¿Los del este están con nosotros?",tag:"FRONTERA DEL ESTE",response:"Sí. Los del este estamos con la República de Veyra. Somos la gente que nació entre el mar y la frontera, la que ve cada día el peso del conflicto. Por eso mismo nos alistan aquí: no por ser más valientes, sino porque estamos más cerca de la guerra y de la amenaza que llega desde el norte y desde la cordillera."},
   {id:"enemy-ship",unlockAfter:"east-front",title:"¿Vamos a tener que cruzar el mar?",tag:"TRASLADO",response:"Sí. El viaje por mar está garantizado. La mayoría de los reclutas no cruza la cordillera a pie ni de golpe. Algunos tendrán que llegar al frente por barco, y no será un viaje tranquilo. El transporte no será amable; será militar, a menudo capturado, y siempre vigilado por la misma amenaza a la que se dirigen."},
-  {id:"collars",unlockAfter:"enemy-ship",title:"¿Qué ocurre con los miembros de razas peligrosas?",tag:"CONTROL MILITAR",response:"Hay collares. No son adornos. Los llevan algunos de la milicia y algunos reclutados con sangre peligrosa o con rasgos que los mandos consideran incontrolables. Son dispositivos de control para vigilarlos, marcarlos y, si hace falta, detenerlos. Los superiores pueden ver su pulso, su fuerza y su intención como si fueran su propio reloj de guerra."},
+  {id:"collars",unlockAfter:"enemy-ship",title:"¿Qué ocurre con los miembros de razas peligrosas?",tag:"CONTROL MILITAR",response:"Hay collares. No son adornos. Los llevan algunos de la milicia y algunos reclutados con sangre peligrosa o con rasgos que los mandos consideran incontrolables. Son dispositivos de control para vigilarlos, marcarlos y, si hace falta, detenerlos. Los superiores pueden ver su pulso, su fuerza y su intención como si fueran su propio reloj."},
   {id:"war-objective",unlockAfter:"collars",title:"¿Cuál es nuestro objetivo en esta guerra?",tag:"OBJETIVO MILITAR",response:"Mantener los pasos, proteger nuestro hogar y evitar que el enemigo llegue al interior. En los informes oficiales, eso es todo. Pero los expertos saben que la verdadera prioridad es impedir que el reino de la cordillera consolide su poder sobre los puertos y la cadena montañosa."},
   {id:"officer-belief",unlockAfter:"war-objective",title:"¿Usted cree que esta guerra es justa?",tag:"OPINIÓN DEL OFICIAL",response:"Creo que hay gente intentando sobrevivir a ambos lados de la frontera. Después de once años, dejé de confundir las órdenes de los generales con la justicia. Lo que deciden los mandos no siempre coincide con lo que la gente necesita."},
   {id:"mountain",unlockAfter:"officer-belief",title:"¿Qué ocurre realmente en esa montaña?",tag:"LA PRUEBA",response:"Los altos mandos dan por hecho que es algo anómalo, quizá más peligroso que natural. Pero eso es una suposición, no un hecho probado. Lo único que sabemos con certeza es que ese lugar altera la lógica, ya que segun las suposiciones esa es la última prueba de los generales enemigos."},
@@ -156,6 +159,7 @@ function revealFullDialogue(){
   activeDialogueText = "";
   dialogueFullText = "";
   cursor.style.opacity = 0;
+  if(officerPortrait) officerPortrait.src=officerCloseImage;
   dialogueMore?.classList.remove("visible");
   dialogue.scrollTop = dialogue.scrollHeight;
 }
@@ -174,6 +178,7 @@ function typeDialogue(text){
   dialogueVisibleLength = 0;
   dialogue.textContent = "";
   cursor.style.opacity = 1;
+  if(officerPortrait) officerPortrait.src=officerOpenImage;
   dialogueMore?.classList.remove("visible");
 
   const write = () => {
@@ -184,6 +189,7 @@ function typeDialogue(text){
       dialogueFullText = "";
       dialogueVisibleLength = 0;
       cursor.style.opacity = 0;
+      if(officerPortrait) officerPortrait.src=officerCloseImage;
       dialogueMore?.classList.remove("visible");
       return;
     }
@@ -593,6 +599,23 @@ function generatePDF(data){
 
 form.addEventListener("submit",e=>{
   e.preventDefault();
+  const requiredFields=[
+    ["name","el nombre"],
+    ["gender","el género"],
+    ["age","la edad"],
+    ["race","la raza"],
+    ["appearance","la descripción física"]
+  ];
+  const missing=requiredFields
+    .filter(([id])=>!document.getElementById(id).value.trim())
+    .map(([,label])=>label);
+  if(!document.getElementById("oath").checked) missing.push("la declaración");
+  if(getSpentPoints()<=0) missing.push("al menos un punto de estadísticas");
+
+  if(missing.length){
+    showStatDialog(`No se puede generar el expediente. Completa: ${missing.join(", ")}.`);
+    return;
+  }
   if(!form.checkValidity()){form.reportValidity();return}
   lastData={
     name:document.getElementById("name").value.trim(),

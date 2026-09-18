@@ -177,6 +177,13 @@ body::before {
   text-align: center;
 }
 
+.officer-portrait {
+  display: block;
+  width: 100%;
+  height: calc(100% - 23px);
+  object-fit: cover;
+}
+
 .placeholder-soldier {
   position: relative;
   height: 100%;
