@@ -50,9 +50,9 @@ body::before {
 .document {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  width: min(1320px, calc(100% - 30px));
+  width: 100%;
   height: 100%;
-  margin: 0 auto;
+  margin: 0;
   box-shadow: 0 30px 90px #0009;
 }
 
@@ -366,6 +366,47 @@ body::before {
   color: #8f9383;
   font-size: 8px;
   border-top: 1px solid #656959;
+}
+
+.music-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.music-controls button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  color: #dedac9;
+  font-size: 15px;
+  background: #20251f;
+  border: 1px solid #737967;
+  cursor: pointer;
+}
+
+.music-controls button[aria-pressed="true"] {
+  color: #f0c47d;
+  border-color: #bd8d47;
+}
+
+.music-controls input[type="range"] {
+  width: min(125px, 42%);
+  height: 4px;
+  margin: 0;
+  padding: 0;
+  accent-color: #bd8d47;
+  cursor: pointer;
+}
+
+.music-controls span {
+  min-width: 25px;
+  color: #aeb19f;
+  font-size: 8px;
+  text-align: right;
 }
 
 .terminal strong {

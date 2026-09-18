@@ -26,6 +26,9 @@ const dialogueMore=document.getElementById("dialogueMore");
 const officerPortrait=document.getElementById("officerPortrait");
 const officerCloseImage="img/close.png";
 const officerOpenImage="img/open.png";
+const musicToggle=document.getElementById("musicToggle");
+const musicVolume=document.getElementById("musicVolume");
+const musicVolumeLabel=document.getElementById("musicVolumeLabel");
 
 let lastData=null,lastImage=null,typingToken=0,audioCtx=null,typingTimer=null,activeDialogueText="",dialogueFullText="",dialogueChunkSize=220,dialogueVisibleLength=0;
 
@@ -638,14 +641,27 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")modal.classList.add(
 
 const audioFile = "sfx/bgs.mp3";
 let bgmAudio = null;
+let musicMuted = false;
 
 function ensureBgm(){
   if(!bgmAudio){
     bgmAudio = new Audio(audioFile);
     bgmAudio.loop = true;
-    bgmAudio.volume = 0.03;
+    bgmAudio.volume = Number(musicVolume?.value || 3) / 100;
     bgmAudio.preload = "auto";
-    bgmAudio.play().catch(() => {});
+  }
+  bgmAudio.muted = musicMuted;
+  bgmAudio.play().catch(() => {});
+}
+
+function updateMusicControls(){
+  const volume=Number(musicVolume?.value || 0);
+  if(bgmAudio) bgmAudio.volume=volume / 100;
+  if(musicVolumeLabel) musicVolumeLabel.textContent=`${volume}%`;
+  if(musicToggle){
+    musicToggle.setAttribute("aria-pressed",String(musicMuted));
+    musicToggle.setAttribute("aria-label",musicMuted?"Activar música":"Silenciar música");
+    musicToggle.textContent=musicMuted?"×":"♫";
   }
 }
 
@@ -656,6 +672,19 @@ if (document.visibilityState === "visible") {
 document.addEventListener("visibilitychange",()=>{
   if(document.visibilityState === "visible") ensureBgm();
 });
+
+document.addEventListener("pointerdown",()=>ensureBgm(),{once:true});
+
+musicVolume?.addEventListener("input",()=>{
+  ensureBgm();
+  updateMusicControls();
+});
+musicToggle?.addEventListener("click",()=>{
+  musicMuted=!musicMuted;
+  ensureBgm();
+  updateMusicControls();
+});
+updateMusicControls();
 
 openQuestions.addEventListener("click",()=>{
   formArea.scrollTop=0;
