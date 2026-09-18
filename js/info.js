@@ -651,19 +651,19 @@ function ensureBgm(){
     bgmAudio.volume = Number(musicVolume?.value || 3) / 100;
     bgmAudio.preload = "auto";
     bgmAudio.addEventListener("playing",()=>{
-      if(soundState) soundState.textContent="AUDIO · ACTIVO";
+      if(soundState) soundState.textContent="MÚSICA · ACTIVA";
     });
     bgmAudio.addEventListener("pause",()=>{
-      if(soundState && !bgmAudio.ended) soundState.textContent="AUDIO · PAUSADO";
+      if(soundState && !bgmAudio.ended) soundState.textContent="MÚSICA · DESACTIVADA";
     });
     bgmAudio.addEventListener("error",()=>{
-      if(soundState) soundState.textContent="AUDIO · NO DISPONIBLE";
+      if(soundState) soundState.textContent="MÚSICA · NO DISPONIBLE";
     });
   }
   bgmAudio.muted = musicMuted;
   const playback=bgmAudio.play();
   playback?.catch(()=>{
-    if(soundState) soundState.textContent="AUDIO · PULSA PARA ACTIVAR";
+    if(soundState) soundState.textContent=musicMuted?"MÚSICA · DESACTIVADA":"MÚSICA · ESPERANDO";
   });
 }
 
@@ -676,6 +676,7 @@ function updateMusicControls(){
     musicToggle.setAttribute("aria-label",musicMuted?"Activar música":"Silenciar música");
     musicToggle.textContent=musicMuted?"×":"♫";
   }
+  if(soundState && musicMuted) soundState.textContent="MÚSICA · DESACTIVADA";
 }
 
 if (document.visibilityState === "visible") {
@@ -686,7 +687,14 @@ document.addEventListener("visibilitychange",()=>{
   if(document.visibilityState === "visible") ensureBgm();
 });
 
-document.addEventListener("pointerdown",()=>ensureBgm(),{once:true});
+document.addEventListener("pointerdown",()=>{
+  ensureBgm();
+  if(audioCtx?.state==="suspended") audioCtx.resume().catch(()=>{});
+},{once:true});
+document.addEventListener("keydown",()=>{
+  ensureBgm();
+  if(audioCtx?.state==="suspended") audioCtx.resume().catch(()=>{});
+},{once:true});
 
 musicVolume?.addEventListener("input",()=>{
   ensureBgm();

@@ -362,7 +362,8 @@ body::before {
   display: flex;
   justify-content: space-between;
   margin: 22px 25px 25px;
-  padding-top: 14px;
+  min-height: 92px;
+  padding-top: 18px;
   color: #8f9383;
   font-size: 8px;
   border-top: 1px solid #656959;
@@ -372,17 +373,17 @@ body::before {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 10px;
+  margin-top: 14px;
 }
 
 .music-controls button {
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
+  width: 34px;
+  height: 34px;
   padding: 0;
   color: #dedac9;
-  font-size: 15px;
+  font-size: 18px;
   background: #20251f;
   border: 1px solid #737967;
   cursor: pointer;
@@ -394,8 +395,8 @@ body::before {
 }
 
 .music-controls input[type="range"] {
-  width: min(125px, 42%);
-  height: 4px;
+  width: min(170px, 48%);
+  height: 8px;
   margin: 0;
   padding: 0;
   accent-color: #bd8d47;
@@ -403,9 +404,9 @@ body::before {
 }
 
 .music-controls span {
-  min-width: 25px;
+  min-width: 32px;
   color: #aeb19f;
-  font-size: 8px;
+  font-size: 9px;
   text-align: right;
 }
 
