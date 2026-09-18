@@ -651,7 +651,7 @@ function ensureBgm(){
     bgmAudio.volume = Number(musicVolume?.value || 3) / 100;
     bgmAudio.preload = "auto";
     bgmAudio.addEventListener("playing",()=>{
-      if(soundState) soundState.textContent="MÚSICA · ACTIVA";
+      if(soundState) soundState.textContent=musicMuted?"MÚSICA · DESACTIVADA":"MÚSICA · ACTIVA";
     });
     bgmAudio.addEventListener("pause",()=>{
       if(soundState && !bgmAudio.ended) soundState.textContent="MÚSICA · DESACTIVADA";
